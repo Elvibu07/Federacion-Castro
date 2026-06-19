@@ -9,6 +9,7 @@ interface JudgePortalProps {
   tribunals: Tribunal[];
   aspirantes: Aspirante[];
   onUpdateAspirantes: (updated: Aspirante[]) => void;
+  onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
   onLogout: () => void;
 }
 
@@ -46,6 +47,7 @@ export default function JudgePortal({
   tribunals,
   aspirantes,
   onUpdateAspirantes,
+  onUpdateAspiranteAtomic,
   onLogout,
 }: JudgePortalProps) {
   const { showConfirm, showAlert } = useUI();
@@ -71,9 +73,13 @@ export default function JudgePortal({
   };
 
   const updateEval = (aspId: string, ev: Evaluacion) => {
-    onUpdateAspirantes(aspirantes.map(a =>
-      a.id === aspId ? { ...a, evaluacion: ev } : a
-    ));
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(aspId, { evaluacion: ev });
+    } else {
+      onUpdateAspirantes(aspirantes.map(a =>
+        a.id === aspId ? { ...a, evaluacion: ev } : a
+      ));
+    }
   };
 
   const handleIniciarMiPlanilla = (aspId: string) => {
@@ -95,9 +101,13 @@ export default function JudgePortal({
 
     updatedEv.votos = [...updatedEv.votos.filter(v => v.judgeId !== activeJudge.id), newVoto];
     
-    onUpdateAspirantes(aspirantes.map(a =>
-      a.id === aspId ? { ...a, evaluacion: updatedEv, status: 'En evaluación' } : a
-    ));
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(aspId, { evaluacion: updatedEv, status: 'En evaluación' });
+    } else {
+      onUpdateAspirantes(aspirantes.map(a =>
+        a.id === aspId ? { ...a, evaluacion: updatedEv, status: 'En evaluación' } : a
+      ));
+    }
   };
 
   const handleToggleParte = (aspId: string, parteId: string, resultado: 'Apto' | 'No Apto') => {

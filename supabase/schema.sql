@@ -104,8 +104,17 @@ ALTER TABLE public.tribunales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.documentos ENABLE ROW LEVEL SECURITY;
 
 -- POLÍTICAS DE PRUEBA (Permiten todo acceso anónimo para empezar, luego deberás restringirlas)
+DROP POLICY IF EXISTS "Permitir todo acceso a aspirantes" ON public.aspirantes;
 CREATE POLICY "Permitir todo acceso a aspirantes" ON public.aspirantes FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo acceso a convocatorias" ON public.convocatorias;
 CREATE POLICY "Permitir todo acceso a convocatorias" ON public.convocatorias FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo acceso a judges" ON public.judges;
 CREATE POLICY "Permitir todo acceso a judges" ON public.judges FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo acceso a tribunales" ON public.tribunales;
 CREATE POLICY "Permitir todo acceso a tribunales" ON public.tribunales FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo acceso a documentos" ON public.documentos;
 CREATE POLICY "Permitir todo acceso a documentos" ON public.documentos FOR ALL USING (true);

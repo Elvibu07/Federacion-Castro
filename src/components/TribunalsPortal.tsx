@@ -9,7 +9,10 @@ interface TribunalsPortalProps {
   tribunals: Tribunal[];
   aspirantes: Aspirante[];
   onUpdateTribunals: (updated: Tribunal[]) => void;
+  onUpdateTribunalAtomic?: (id: string, updates: Partial<Tribunal>) => void;
+  onAddTribunalAtomic?: (newTribunal: Tribunal) => void;
   onUpdateAspirantes: (updated: Aspirante[]) => void;
+  onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
   onUpdateJudges?: (updated: Judge[]) => void;
   onLogout: () => void;
   convocatorias: Convocatoria[];
@@ -51,7 +54,10 @@ export default function TribunalsPortal({
   tribunals,
   aspirantes,
   onUpdateTribunals,
+  onUpdateTribunalAtomic,
+  onAddTribunalAtomic,
   onUpdateAspirantes,
+  onUpdateAspiranteAtomic,
   onUpdateJudges,
   onLogout,
   convocatorias,
@@ -86,9 +92,16 @@ export default function TribunalsPortal({
   };
 
   const handleRemoveJudge = (judgeId: string, tribunalId: string) => {
-    onUpdateTribunals(tribunals.map(t =>
-      t.id === tribunalId ? { ...t, judges: t.judges.filter(j => j.id !== judgeId) } : t
-    ));
+    if (onUpdateTribunalAtomic) {
+      const t = tribunals.find(tr => tr.id === tribunalId);
+      if (t) {
+        onUpdateTribunalAtomic(tribunalId, { judges: t.judges.filter(j => j.id !== judgeId) });
+      }
+    } else {
+      onUpdateTribunals(tribunals.map(t =>
+        t.id === tribunalId ? { ...t, judges: t.judges.filter(j => j.id !== judgeId) } : t
+      ));
+    }
   };
 
   const handleAddJudge = () => {
@@ -122,9 +135,17 @@ export default function TribunalsPortal({
 
   // ── Aspirant assignment ───────────────────────────────────────────────────
   const handleToggleAsp = (aspId: string, tribunalId: string) => {
-    onUpdateAspirantes(aspirantes.map(a =>
-      a.id === aspId ? { ...a, assignedTribunalId: a.assignedTribunalId === tribunalId ? undefined : tribunalId } : a
-    ));
+    if (onUpdateAspiranteAtomic) {
+      const asp = aspirantes.find(a => a.id === aspId);
+      if (asp) {
+        const newTribunalId = asp.assignedTribunalId === tribunalId ? undefined : tribunalId;
+        onUpdateAspiranteAtomic(aspId, { assignedTribunalId: newTribunalId });
+      }
+    } else {
+      onUpdateAspirantes(aspirantes.map(a =>
+        a.id === aspId ? { ...a, assignedTribunalId: a.assignedTribunalId === tribunalId ? undefined : tribunalId } : a
+      ));
+    }
   };
 
   // ── Evaluación helpers ────────────────────────────────────────────────────
@@ -134,9 +155,13 @@ export default function TribunalsPortal({
   };
 
   const updateEval = (aspId: string, ev: Evaluacion) => {
-    onUpdateAspirantes(aspirantes.map(a =>
-      a.id === aspId ? { ...a, evaluacion: ev } : a
-    ));
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(aspId, { evaluacion: ev });
+    } else {
+      onUpdateAspirantes(aspirantes.map(a =>
+        a.id === aspId ? { ...a, evaluacion: ev } : a
+      ));
+    }
     const found = aspirantes.find(a => a.id === aspId);
     if (found) setSelectedEvalAsp({ ...found, evaluacion: ev });
   };
@@ -147,11 +172,21 @@ export default function TribunalsPortal({
       `¿Estás seguro de que deseas eliminar permanentemente el tribunal "${tribName}"? Esta acción desasignará a todos los aspirantes de esta mesa.`,
       () => {
         // Remover tribunal
+        // Si hay una API para borrar: api.deleteTribunal, pero por ahora no hay onRemoveTribunalAtomic.
+        // Hacemos el fallback de array completo si no hay api o requerimos array mapping.
+        // Asumo que onUpdateTribunals maneja la eliminación de forma cruda si no hay Atomic delete (aún no se requiere)
         onUpdateTribunals(tribunals.filter(t => t.id !== tribId));
+        
         // Desasignar aspirantes de ese tribunal
-        onUpdateAspirantes(aspirantes.map(a => 
-          a.assignedTribunalId === tribId ? { ...a, assignedTribunalId: undefined } : a
-        ));
+        if (onUpdateAspiranteAtomic) {
+          aspirantes.filter(a => a.assignedTribunalId === tribId).forEach(a => {
+            onUpdateAspiranteAtomic(a.id, { assignedTribunalId: undefined });
+          });
+        } else {
+          onUpdateAspirantes(aspirantes.map(a => 
+            a.assignedTribunalId === tribId ? { ...a, assignedTribunalId: undefined } : a
+          ));
+        }
         showAlert('Tribunal Eliminado', 'El tribunal ha sido eliminado correctamente.');
       },
       'Eliminar Tribunal',
@@ -203,8 +238,15 @@ export default function TribunalsPortal({
       'Finalizar Acta',
       `¿Estás seguro de finalizar y emitir el acta para ${asp.name}? El resultado es ${resultadoFinal.toUpperCase()}.`,
       () => {
-        updateEval(aspId, updEval);
-        onUpdateAspirantes(aspirantes.map(a => a.id === aspId ? finalAspirante : a));
+        if (onUpdateAspiranteAtomic) {
+          onUpdateAspiranteAtomic(aspId, { 
+            evaluacion: updEval,
+            status: finalAspirante.status
+          });
+        } else {
+          updateEval(aspId, updEval);
+          onUpdateAspirantes(aspirantes.map(a => a.id === aspId ? finalAspirante : a));
+        }
         
         showAlert('Acta Emitida', `El acta oficial ha sido emitida. El resultado es ${resultadoFinal.toUpperCase()}.`);
         
@@ -280,7 +322,11 @@ export default function TribunalsPortal({
                   `¿Crear el tribunal "${name}"?`,
                   () => {
                     const newT: Tribunal = { id: String(Date.now()), name, isMain: false, judges: [] };
-                    onUpdateTribunals([...tribunals, newT]);
+                    if (onAddTribunalAtomic) {
+                      onAddTribunalAtomic(newT);
+                    } else {
+                      onUpdateTribunals([...tribunals, newT]);
+                    }
                     setActiveTab('tribunales');
                     showAlert('Tribunal Creado', `Tribunal "${name}" creado exitosamente.`);
                   },

@@ -7,6 +7,7 @@ interface ArbitroPortalProps {
   tribunals: Tribunal[];
   aspirantes: Aspirante[];
   onUpdateAspirantes: (updated: Aspirante[]) => void;
+  onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
   onLogout: () => void;
 }
 
@@ -34,6 +35,7 @@ export default function ArbitroPortal({
   tribunals,
   aspirantes,
   onUpdateAspirantes,
+  onUpdateAspiranteAtomic,
   onLogout,
 }: ArbitroPortalProps) {
   const { showToast, showConfirm, showAlert } = useUI();
@@ -74,9 +76,13 @@ export default function ArbitroPortal({
   };
 
   const updateEval = (aspId: string, ev: Evaluacion) => {
-    onUpdateAspirantes(aspirantes.map(a =>
-      a.id === aspId ? { ...a, evaluacion: ev } : a
-    ));
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(aspId, { evaluacion: ev });
+    } else {
+      onUpdateAspirantes(aspirantes.map(a =>
+        a.id === aspId ? { ...a, evaluacion: ev } : a
+      ));
+    }
   };
 
   const handleEnviarResultadoKumite = (aspId: string) => {

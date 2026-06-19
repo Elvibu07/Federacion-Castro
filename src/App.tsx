@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Aspirante, Judge, Tribunal, Convocatoria } from './types';
-import { INITIAL_ASPIRANTES, INITIAL_JUDGES, INITIAL_TRIBUNALS, INITIAL_CONVOCATORIAS } from './data';
+import * as api from './lib/api';
 import LoginPortal from './components/LoginPortal';
 import AspirantPortal from './components/AspirantPortal';
 import DeportistaPortal from './components/DeportistaPortal';
@@ -24,32 +24,65 @@ export default function App() {
     return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
 
-  // ── Persistent state ──────────────────────────────────────────────────────
-  const [aspirantes, setAspirantes] = useState<Aspirante[]>(() => {
-    const saved = localStorage.getItem('fmk_aspirantes');
-    return saved ? JSON.parse(saved) : INITIAL_ASPIRANTES;
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [aspirantes, setAspirantes] = useState<Aspirante[]>([]);
+  const [tribunals, setTribunals] = useState<Tribunal[]>([]);
+  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>([]);
+  const [judges, setJudges] = useState<Judge[]>([]);
 
-  const [tribunals, setTribunals] = useState<Tribunal[]>(() => {
-    const saved = localStorage.getItem('fmk_tribunals');
-    return saved ? JSON.parse(saved) : INITIAL_TRIBUNALS;
-  });
+  // ── Fetch from Supabase ───────────────────────────────────────────────────
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const [aspData, tribData, convData, judgeData] = await Promise.all([
+        api.fetchAspirantes(),
+        api.fetchTribunals(),
+        api.fetchConvocatorias(),
+        api.fetchJudges(),
+      ]);
+      setAspirantes(aspData);
+      setTribunals(tribData);
+      setConvocatorias(convData);
+      setJudges(judgeData);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
-  const [convocatorias, setConvocatorias] = useState<Convocatoria[]>(() => {
-    const saved = localStorage.getItem('fmk_convocatorias');
-    return saved ? JSON.parse(saved) : INITIAL_CONVOCATORIAS;
-  });
+  // ── Sincronizar Cambios Atómicos ──────────────────────────────────────────
+  const updateAspiranteAtomic = async (id: string, updates: Partial<Aspirante>) => {
+    // Actualización optimista local
+    setAspirantes(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    // Persistencia en Supabase
+    await api.updateAspirante(id, updates);
+  };
 
-  const [judges, setJudges] = useState<Judge[]>(() => {
-    const saved = localStorage.getItem('fmk_judges');
-    return saved ? JSON.parse(saved) : INITIAL_JUDGES;
-  });
+  const updateConvocatoriaAtomic = async (id: string, updates: Partial<Convocatoria>) => {
+    setConvocatorias(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    await api.updateConvocatoria(id, updates);
+  };
 
-  // ── Sync to localStorage ──────────────────────────────────────────────────
-  useEffect(() => { localStorage.setItem('fmk_aspirantes',   JSON.stringify(aspirantes));   }, [aspirantes]);
-  useEffect(() => { localStorage.setItem('fmk_tribunals',    JSON.stringify(tribunals));    }, [tribunals]);
-  useEffect(() => { localStorage.setItem('fmk_convocatorias',JSON.stringify(convocatorias));}, [convocatorias]);
-  useEffect(() => { localStorage.setItem('fmk_judges',       JSON.stringify(judges));       }, [judges]);
+  const updateTribunalAtomic = async (id: string, updates: Partial<Tribunal>) => {
+    setTribunals(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    await api.updateTribunal(id, updates);
+  };
+
+  const addTribunalAtomic = async (newTribunal: Tribunal) => {
+    setTribunals(prev => [...prev, newTribunal]);
+    await api.createTribunal(newTribunal);
+  };
+
+  const updateJudgeAtomic = async (id: string, updates: Partial<Judge>) => {
+    setJudges(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
+    await api.updateJudge(id, updates);
+  };
+
+
+
+  const addAspiranteAtomic = async (newAspirante: Aspirante) => {
+    setAspirantes(prev => [newAspirante, ...prev]);
+    await api.createAspirante(newAspirante);
+  };
 
   // ── Dark Mode Effect ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -78,7 +111,7 @@ export default function App() {
         const newId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
         const rawName = email.split('@')[0].replace(/[._]/g, ' ');
         const name = rawName.replace(/\b\w/g, c => c.toUpperCase());
-        const newAspirante: Aspirante = {
+        const newAspirante: Partial<Aspirante> = {
           id: newId,
           name,
           email,
@@ -87,16 +120,13 @@ export default function App() {
           requestedBelt: '1º Dan',
           status: 'Borrador',
           progressStep: 1,
-          documentos: [],
-          documents: {
-            dni:   { name: '', uploaded: false },
-            photo: { name: '', uploaded: false },
-            license:{ name: '', uploaded: false },
-          },
           paymentStatus: 'Unpaid',
         };
-        setAspirantes(prev => [newAspirante, ...prev]);
+        // Optimistic UI
+        setAspirantes(prev => [{ ...newAspirante, documentos: [], documents: { dni: { name: '', uploaded: false }, photo: { name: '', uploaded: false }, license: { name: '', uploaded: false } } } as Aspirante, ...prev]);
         setActiveUserId(newId);
+        // Persist to Supabase
+        api.createAspirante(newAspirante);
       }
       setRole(userRole);
     } else if (userRole === 'profesor') {
@@ -113,9 +143,9 @@ export default function App() {
     }
   };
 
-  const handleRegister = (data: { name: string; email: string; club: string; birthDate: string }) => {
+  const handleRegister = async (data: { name: string; email: string; club: string; birthDate: string }) => {
     const newId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newAspirante: Aspirante = {
+    const newAspirante: Partial<Aspirante> = {
       id: newId,
       name: data.name,
       email: data.email.toLowerCase(),
@@ -125,25 +155,25 @@ export default function App() {
       requestedBelt: 'Cinturón Amarillo',
       status: 'Borrador',
       progressStep: 1,
-      documentos: [],
-      documents: {
-        dni:   { name: '', uploaded: false },
-        photo: { name: '', uploaded: false },
-        license:{ name: '', uploaded: false },
-      },
       paymentStatus: 'Unpaid',
       licenciasConsecutivas: 0,
       licenciasAcumuladas: 0,
     };
-    setAspirantes(prev => [newAspirante, ...prev]);
+    
+    // Optimistic Update
+    setAspirantes(prev => [{ ...newAspirante, documentos: [], documents: { dni: { name: '', uploaded: false }, photo: { name: '', uploaded: false }, license: { name: '', uploaded: false } } } as Aspirante, ...prev]);
     setActiveUserId(newId);
     setRole('deportista');
+
+    // Supabase Create
+    await api.createAspirante(newAspirante);
   };
 
   const activeUser = aspirantes.find(a => a.id === activeUserId) || aspirantes[0];
 
-  const handleUpdateAspirante = (updated: Aspirante) => {
+  const handleUpdateAspirante = async (updated: Aspirante) => {
     setAspirantes(prev => prev.map(a => a.id === updated.id ? updated : a));
+    await api.updateAspirante(updated.id, updated);
   };
 
   // Cuando el deportista quiere solicitar examen → cambia a rol aspirante
@@ -152,6 +182,17 @@ export default function App() {
   };
 
   const isDev = import.meta.env.DEV;
+
+  if (isLoading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-[#0a0a0a] text-white' : 'bg-stone-50 text-stone-900'}`}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#8b0000] border-t-transparent rounded-full animate-spin"></div>
+          <p className="font-mono text-sm tracking-wider animate-pulse">Conectando con Supabase...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -274,13 +315,17 @@ export default function App() {
           <AdminPortal
             aspirantes={aspirantes}
             onUpdateAspirantes={setAspirantes}
+            onUpdateAspiranteAtomic={updateAspiranteAtomic}
+            onAddAspiranteAtomic={addAspiranteAtomic}
             onLogout={() => setRole('login')}
             allTribunals={tribunals}
             onUpdateTribunals={setTribunals}
             judges={judges}
             onUpdateJudges={setJudges}
+            onUpdateJudgeAtomic={updateJudgeAtomic}
             convocatorias={convocatorias}
             onUpdateConvocatorias={setConvocatorias}
+            onUpdateConvocatoriaAtomic={updateConvocatoriaAtomic}
           />
         )}
 
@@ -289,10 +334,12 @@ export default function App() {
             judges={judges}
             tribunals={tribunals}
             aspirantes={aspirantes}
-            convocatorias={convocatorias}
-            onUpdateTribunals={setTribunals}
             onUpdateAspirantes={setAspirantes}
-            onUpdateJudges={setJudges}
+            onUpdateAspiranteAtomic={updateAspiranteAtomic}
+            onUpdateTribunals={setTribunals}
+            onUpdateTribunalAtomic={updateTribunalAtomic}
+            onAddTribunalAtomic={addTribunalAtomic}
+            convocatorias={convocatorias}
             onLogout={() => setRole('login')}
           />
         )}
@@ -304,6 +351,7 @@ export default function App() {
             tribunals={tribunals}
             aspirantes={aspirantes}
             onUpdateAspirantes={setAspirantes}
+            onUpdateAspiranteAtomic={updateAspiranteAtomic}
             onLogout={() => setRole('login')}
           />
         )}
@@ -314,6 +362,7 @@ export default function App() {
             tribunals={tribunals}
             aspirantes={aspirantes}
             onUpdateAspirantes={setAspirantes}
+            onUpdateAspiranteAtomic={updateAspiranteAtomic}
             onLogout={() => setRole('login')}
           />
         )}
@@ -323,6 +372,7 @@ export default function App() {
             clubName={activeClubName}
             aspirantes={aspirantes}
             onUpdateAspirantes={setAspirantes}
+            onUpdateAspiranteAtomic={updateAspiranteAtomic}
             onLogout={() => setRole('login')}
           />
         )}

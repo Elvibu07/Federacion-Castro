@@ -6,10 +6,11 @@ interface ProfesorPortalProps {
   clubName: string;
   aspirantes: Aspirante[];
   onUpdateAspirantes: (updated: Aspirante[]) => void;
+  onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
   onLogout: () => void;
 }
 
-export default function ProfesorPortal({ clubName, aspirantes, onUpdateAspirantes, onLogout }: ProfesorPortalProps) {
+export default function ProfesorPortal({ clubName, aspirantes, onUpdateAspirantes, onUpdateAspiranteAtomic, onLogout }: ProfesorPortalProps) {
   const { showToast, showConfirm, showAlert } = useUI();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'alumnos' | 'pagos' | 'estadisticas'>('dashboard');
 
@@ -52,27 +53,30 @@ export default function ProfesorPortal({ clubName, aspirantes, onUpdateAspirante
       () => {
         setUploadStatus('uploading');
         setTimeout(() => {
-          const updated = aspirantes.map(asp => {
-            if (asp.id !== selectedAspId) return asp;
-            const docs = asp.documentos || [];
-            const existingAval = docs.find(d => d.tipo === 'aval_tecnico');
-            let newDocs: Documento[];
-            if (existingAval) {
-              newDocs = docs.map(d => d.tipo === 'aval_tecnico' ? { ...d, estado: 'cargado', nombre: 'Aval_Profesor_FMK.pdf', fileSize: '450 KB', fechaCarga: new Date().toISOString().split('T')[0] } : d);
-            } else {
-              newDocs = [...docs, {
-                tipo: 'aval_tecnico',
-                etiqueta: 'Aval del Profesor',
-                estado: 'cargado',
-                nombre: 'Aval_Profesor_FMK.pdf',
-                fileSize: '450 KB',
-                fechaCarga: new Date().toISOString().split('T')[0]
-              }];
-            }
-            return { ...asp, documentos: newDocs };
-          });
-          
-          onUpdateAspirantes(updated);
+          if (onUpdateAspiranteAtomic) {
+            onUpdateAspiranteAtomic(selectedAspId, { avalTecnico: 'emitido' });
+          } else {
+            const updated = aspirantes.map(asp => {
+              if (asp.id !== selectedAspId) return asp;
+              const docs = asp.documentos || [];
+              const existingAval = docs.find(d => d.tipo === 'aval_tecnico');
+              let newDocs: Documento[];
+              if (existingAval) {
+                newDocs = docs.map(d => d.tipo === 'aval_tecnico' ? { ...d, estado: 'cargado', nombre: 'Aval_Profesor_FMK.pdf', fileSize: '450 KB', fechaCarga: new Date().toISOString().split('T')[0] } : d);
+              } else {
+                newDocs = [...docs, {
+                  tipo: 'aval_tecnico',
+                  etiqueta: 'Aval del Profesor',
+                  estado: 'cargado',
+                  nombre: 'Aval_Profesor_FMK.pdf',
+                  fileSize: '450 KB',
+                  fechaCarga: new Date().toISOString().split('T')[0]
+                }];
+              }
+              return { ...asp, avalTecnico: 'emitido', documentos: newDocs };
+            });
+            onUpdateAspirantes(updated);
+          }
           setUploadStatus('success');
           showAlert('Aval Emitido', `El aval para ${aspName} ha sido emitido y adjuntado al expediente.`);
           
@@ -101,13 +105,19 @@ export default function ProfesorPortal({ clubName, aspirantes, onUpdateAspirante
       () => {
         setIsPayingBulk(true);
         setTimeout(() => {
-          const updated = aspirantes.map(asp => {
-            if (selectedForPayment.has(asp.id)) {
-              return { ...asp, paymentStatus: 'Paid' as const, progressStep: 4, status: 'Admitida' as const };
-            }
-            return asp;
-          });
-          onUpdateAspirantes(updated);
+          if (onUpdateAspiranteAtomic) {
+            selectedForPayment.forEach(id => {
+              onUpdateAspiranteAtomic(id, { paymentStatus: 'Paid' });
+            });
+          } else {
+            const updated = aspirantes.map(asp => {
+              if (selectedForPayment.has(asp.id)) {
+                return { ...asp, paymentStatus: 'Paid' as const, progressStep: 4, status: 'Admitida' as const };
+              }
+              return asp;
+            });
+            onUpdateAspirantes(updated);
+          }
           showAlert('Pago Procesado', `El pago agrupado para ${selectedForPayment.size} alumno(s) se procesó correctamente.`);
           setIsPayingBulk(false);
           setSelectedForPayment(new Set());

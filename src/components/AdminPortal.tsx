@@ -6,13 +6,17 @@ import { useUI } from '../contexts/UIContext';
 interface AdminPortalProps {
   aspirantes: Aspirante[];
   onUpdateAspirantes: (updated: Aspirante[]) => void;
+  onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
+  onAddAspiranteAtomic?: (newAspirante: Aspirante) => void;
   onLogout: () => void;
   allTribunals: Tribunal[];
   onUpdateTribunals?: (updated: Tribunal[]) => void;
   judges?: Judge[];
   onUpdateJudges?: (updated: Judge[]) => void;
+  onUpdateJudgeAtomic?: (id: string, updates: Partial<Judge>) => void;
   convocatorias: Convocatoria[];
   onUpdateConvocatorias: (updated: Convocatoria[]) => void;
+  onUpdateConvocatoriaAtomic?: (id: string, updates: Partial<Convocatoria>) => void;
 }
 
 type AdminTab = 'dashboard' | 'kanban' | 'documentos' | 'convocatorias' | 'especiales' | 'estadisticas' | 'configuracion' | 'usuarios';
@@ -52,13 +56,17 @@ function DocEstadoBadge({ estado }: { estado: EstadoDocumento }) {
 export default function AdminPortal({
   aspirantes,
   onUpdateAspirantes,
+  onUpdateAspiranteAtomic,
+  onAddAspiranteAtomic,
   onLogout,
   allTribunals,
   onUpdateTribunals,
   judges = [],
   onUpdateJudges,
+  onUpdateJudgeAtomic,
   convocatorias,
   onUpdateConvocatorias,
+  onUpdateConvocatoriaAtomic,
 }: AdminPortalProps) {
   const { showToast, showConfirm, showAlert, showPrompt } = useUI();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
@@ -111,7 +119,11 @@ export default function AdminPortal({
             paymentStatus: 'Unpaid',
             active: true
           };
-          onUpdateAspirantes([newAsp, ...aspirantes]);
+          if (onAddAspiranteAtomic) {
+            onAddAspiranteAtomic(newAsp);
+          } else {
+            onUpdateAspirantes([newAsp, ...aspirantes]);
+          }
         } else {
           const newId = `${newUserType === 'juez' ? 'j' : 'a'}-${Math.floor(1000 + Math.random() * 9000)}`;
           const rank = newUserType === 'juez' ? 'Juez Regional' : 'Árbitro Nacional';
@@ -157,9 +169,19 @@ export default function AdminPortal({
       message,
       () => {
         if (type === 'juez' && onUpdateJudges) {
-          onUpdateJudges(judges.map(j => j.id === id ? { ...j, active: j.active === false ? true : false } : j));
+          const currentJudge = judges.find(j => j.id === id);
+          if (currentJudge) {
+            const newActiveState = !currentJudge.active;
+            if (onUpdateJudgeAtomic) onUpdateJudgeAtomic(id, { active: newActiveState });
+            else onUpdateJudges(judges.map(j => j.id === id ? { ...j, active: newActiveState } : j));
+          }
         } else if (type === 'deportista') {
-          onUpdateAspirantes(aspirantes.map(a => a.id === id ? { ...a, active: a.active === false ? true : false } : a));
+          const currentAsp = aspirantes.find(a => a.id === id);
+          if (currentAsp) {
+            const newActiveState = !currentAsp.active;
+            if (onUpdateAspiranteAtomic) onUpdateAspiranteAtomic(id, { active: newActiveState });
+            else onUpdateAspirantes(aspirantes.map(a => a.id === id ? { ...a, active: newActiveState } : a));
+          }
         }
         showAlert(
           isCurrentlyActive ? 'Cuenta Inhabilitada' : 'Cuenta Habilitada', 
@@ -225,66 +247,69 @@ export default function AdminPortal({
 
   // --- Actions ---
   const moveStatus = (id: string, newStatus: EstadoSolicitud, reason?: string) => {
-    const updated = aspirantes.map(asp => {
-      if (asp.id !== id) return asp;
-      const copy = { ...asp, status: newStatus } as Aspirante;
-      if (newStatus === 'Subsanación') {
-        copy.correctionReason = reason || 'Revisar documentación.';
-        copy.progressStep = 2;
-      } else if (newStatus === 'Validada') {
-        copy.progressStep = 4;
-        copy.correctionReason = undefined;
-      } else if (newStatus === 'Admitida') {
-        copy.progressStep = 4;
-      } else if (newStatus === 'Pendiente') {
-        copy.correctionReason = undefined;
-      }
-      return copy;
-    });
-    onUpdateAspirantes(updated);
-    const found = updated.find(a => a.id === id);
-    if (found) setSelectedAspirante(found);
+    const updates: Partial<Aspirante> = { status: newStatus };
+    if (newStatus === 'Subsanación') {
+      updates.correctionReason = reason || 'Revisar documentación.';
+      updates.progressStep = 2;
+    } else if (newStatus === 'Validada') {
+      updates.progressStep = 4;
+      updates.correctionReason = undefined;
+    } else if (newStatus === 'Admitida') {
+      updates.progressStep = 4;
+    } else if (newStatus === 'Pendiente') {
+      updates.correctionReason = undefined;
+    }
+    
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(id, updates);
+      const found = aspirantes.find(a => a.id === id);
+      if (found) setSelectedAspirante({ ...found, ...updates });
+    } else {
+      const updated = aspirantes.map(asp => asp.id === id ? { ...asp, ...updates } : asp);
+      onUpdateAspirantes(updated);
+      const found = updated.find(a => a.id === id);
+      if (found) setSelectedAspirante(found);
+    }
   };
 
-  const updateDocEstado = (aspId: string, docTipo: string, newEstado: EstadoDocumento, motivo?: string) => {
-    const updated = aspirantes.map(asp => {
-      if (asp.id !== aspId) return asp;
-      
-      const newDocs = (asp.documentos || []).map(d =>
-        d.tipo === docTipo ? { ...d, estado: newEstado, motivoRechazo: motivo } : d
-      );
+  const updateDocEstado = (aspId: string, docName: string, newState: EstadoDocumento, reason?: string) => {
+    const asp = aspirantes.find(a => a.id === aspId);
+    if (!asp) return;
 
-      let newStatus = asp.status;
-      let correctionReason = asp.correctionReason;
-      let progressStep = asp.progressStep;
+    const newDocs = (asp.documentos || []).map(d =>
+      d.nombre === docName ? { ...d, estado: newState, motivoRechazo: reason } : d
+    );
 
-      const hasRejection = newDocs.some(d => d.estado === 'rechazado' || d.estado === 'requiere_subsanacion');
-      const hasPending = newDocs.some(d => d.estado === 'no_cargado' || d.estado === 'cargado' || d.estado === 'en_revision');
-      
-      if (hasRejection) {
-        newStatus = 'Subsanación';
-        correctionReason = motivo || 'Documentación rechazada o requiere subsanación.';
-        progressStep = 2;
-      } else if (!hasPending && newDocs.filter(d => d.tipo !== 'justificante_pago').length > 0 && newDocs.every(d => d.estado === 'aprobado' || d.tipo === 'justificante_pago')) {
-        // If all mandatory docs are approved and none are pending/rejected
-        if (newStatus === 'Pendiente' || newStatus === 'Enviada' || newStatus === 'Subsanación') {
-          newStatus = 'Validada';
-          correctionReason = undefined;
-          progressStep = 4;
-        }
+    let newStatus = asp.status;
+    let correctionReason = asp.correctionReason;
+    let progressStep = asp.progressStep;
+
+    const hasRejection = newDocs.some(d => d.estado === 'rechazado' || d.estado === 'requiere_subsanacion');
+    const hasPending = newDocs.some(d => d.estado === 'no_cargado' || d.estado === 'cargado' || d.estado === 'en_revision');
+    
+    if (hasRejection) {
+      newStatus = 'Subsanación';
+      correctionReason = reason || 'Documentación rechazada o requiere subsanación.';
+      progressStep = 2;
+    } else if (!hasPending && newDocs.filter(d => d.tipo !== 'justificante_pago').length > 0 && newDocs.every(d => d.estado === 'aprobado' || d.tipo === 'justificante_pago')) {
+      if (newStatus === 'Pendiente' || newStatus === 'Enviada' || newStatus === 'Subsanación') {
+        newStatus = 'Validada';
+        correctionReason = undefined;
+        progressStep = 4;
       }
+    }
 
-      return {
-        ...asp,
-        status: newStatus,
-        correctionReason,
-        progressStep,
-        documentos: newDocs
-      };
-    });
-    onUpdateAspirantes(updated);
-    const found = updated.find(a => a.id === aspId);
-    if (found) setSelectedAspirante(found);
+    const updates = { status: newStatus, correctionReason, progressStep, documentos: newDocs };
+
+    if (onUpdateAspiranteAtomic) {
+      onUpdateAspiranteAtomic(aspId, updates);
+      setSelectedAspirante({ ...asp, ...updates });
+    } else {
+      const updated = aspirantes.map(a => a.id === aspId ? { ...a, ...updates } : a);
+      onUpdateAspirantes(updated);
+      const found = updated.find(a => a.id === aspId);
+      if (found) setSelectedAspirante(found);
+    }
   };
 
   const handleEmitirActa = () => {
@@ -311,13 +336,11 @@ export default function AdminPortal({
       'Confirmar Informe No Apto',
       `¿Estás seguro de enviar este informe de suspensión a ${selectedAspirante.name}? Se registrará en su historial de grados.`,
       () => {
-        const updated = aspirantes.map(asp => {
-          if (asp.id !== selectedAspirante.id) return asp;
-          return {
-            ...asp,
+        if (onUpdateAspiranteAtomic) {
+          onUpdateAspiranteAtomic(selectedAspirante.id, {
             evaluacion: {
-              ...(asp.evaluacion || {
-                aspiranteId: asp.id,
+              ...(selectedAspirante.evaluacion || {
+                aspiranteId: selectedAspirante.id,
                 bloqueComun: { iniciado: false, completado: false, partes: [] },
                 exentoBloqueEspecifico: false,
                 votos: [],
@@ -325,9 +348,26 @@ export default function AdminPortal({
               }),
               informeNoApto: informeText,
             }
-          };
-        });
-        onUpdateAspirantes(updated);
+          });
+        } else {
+          const updated = aspirantes.map(asp => {
+            if (asp.id !== selectedAspirante.id) return asp;
+            return {
+              ...asp,
+              evaluacion: {
+                ...(asp.evaluacion || {
+                  aspiranteId: asp.id,
+                  bloqueComun: { iniciado: false, completado: false, partes: [] },
+                  exentoBloqueEspecifico: false,
+                  votos: [],
+                  actaEmitida: false,
+                }),
+                informeNoApto: informeText,
+              }
+            };
+          });
+          onUpdateAspirantes(updated);
+        }
         setShowInformeModal(false);
         setInformeText('');
         showAlert('Informe Enviado', 'El informe de No Apto ha sido enviado al aspirante.');
@@ -955,10 +995,16 @@ export default function AdminPortal({
                                   'Aprobar Dispensa',
                                   `¿Aprobar dispensa médica para ${asp.name}?`,
                                   () => {
-                                    const updated = aspirantes.map(a => a.id === asp.id
-                                      ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: true } } : a
-                                    );
-                                    onUpdateAspirantes(updated);
+                                    if (onUpdateAspiranteAtomic) {
+                                      onUpdateAspiranteAtomic(asp.id, {
+                                        dispensaMedica: { ...asp.dispensaMedica!, aprobada: true }
+                                      });
+                                    } else {
+                                      const updated = aspirantes.map(a => a.id === asp.id
+                                        ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: true } } : a
+                                      );
+                                      onUpdateAspirantes(updated);
+                                    }
                                     showAlert('Dispensa Aprobada', 'Se ha aprobado la dispensa médica del aspirante.');
                                   },
                                   'Aprobar'
@@ -972,10 +1018,16 @@ export default function AdminPortal({
                                   'Denegar Dispensa',
                                   `¿Denegar dispensa médica para ${asp.name}?`,
                                   () => {
-                                    const updated = aspirantes.map(a => a.id === asp.id
-                                      ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: false } } : a
-                                    );
-                                    onUpdateAspirantes(updated);
+                                    if (onUpdateAspiranteAtomic) {
+                                      onUpdateAspiranteAtomic(asp.id, {
+                                        dispensaMedica: { ...asp.dispensaMedica!, aprobada: false }
+                                      });
+                                    } else {
+                                      const updated = aspirantes.map(a => a.id === asp.id
+                                        ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: false } } : a
+                                      );
+                                      onUpdateAspirantes(updated);
+                                    }
                                     showAlert('Dispensa Denegada', 'La dispensa médica fue rechazada y notificada.');
                                   },
                                   'Denegar',

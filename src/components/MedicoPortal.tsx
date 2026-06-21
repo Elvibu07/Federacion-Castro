@@ -313,19 +313,23 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
                                 <td className="px-6 py-4 text-base text-stone-600 dark:text-stone-400">{a.club}</td>
                                 <td className="px-6 py-4 text-base text-stone-600 dark:text-stone-400">{a.requestedBelt}</td>
                                 <td className="px-6 py-4">
-                                  {hasApto && (
-                                    <div className="mb-1">
-                                      <BadgeMedico estado={a.aptoMedico!.estado} />
-                                      {a.aptoMedico?.nota && <p className="text-xs text-stone-400 italic mt-1">{a.aptoMedico.nota}</p>}
-                                    </div>
-                                  )}
-                                  {hasDispensa && (
-                                    <div className="mt-1">
-                                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border ${a.dispensaMedica!.aprobada ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-700/30' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-700/30'}`}>
-                                        <span className="material-symbols-outlined text-[13px]">{a.dispensaMedica!.aprobada ? 'check_circle' : 'cancel'}</span>
-                                        Dispensa {a.dispensaMedica!.aprobada ? 'Aprobada' : 'Rechazada'}
-                                      </span>
-                                    </div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {hasApto && (
+                                      <div>
+                                        <BadgeMedico estado={a.aptoMedico!.estado} />
+                                      </div>
+                                    )}
+                                    {hasDispensa && (
+                                      <div>
+                                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border ${a.dispensaMedica!.aprobada ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-700/30' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-700/30'}`}>
+                                          <span className="material-symbols-outlined text-[12px]">{a.dispensaMedica!.aprobada ? 'check_circle' : 'cancel'}</span>
+                                          Dispensa {a.dispensaMedica!.aprobada ? 'Aprobada' : 'Rechazada'}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {hasApto && a.aptoMedico?.nota && (
+                                    <p className="text-xs text-stone-400 italic mt-1.5 line-clamp-1" title={a.aptoMedico.nota}>{a.aptoMedico.nota}</p>
                                   )}
                                 </td>
                                 <td className="px-6 py-4 text-stone-500 dark:text-stone-400 font-mono text-sm">

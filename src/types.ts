@@ -138,6 +138,7 @@ export interface DispensaMedica {
   solicitada: boolean;
   aprobada?: boolean;
   motivoDispensa?: string;
+  certificadoAdjunto?: string;
   parteExamenExenta?: string; // qué parte se exime
   fechaSolicitud?: string;
   diasAntelacion?: number;

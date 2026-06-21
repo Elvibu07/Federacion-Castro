@@ -405,6 +405,13 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
                               </div>
                               <div className="bg-stone-50 dark:bg-white/5 rounded-xl p-4 space-y-2 mb-4 border border-stone-100 dark:border-white/5">
                                 {d.motivoDispensa && <p className="text-sm text-stone-600 dark:text-stone-400"><span className="font-bold">Motivo:</span> {d.motivoDispensa}</p>}
+                                {d.certificadoAdjunto && (
+                                  <p className="text-sm text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
+                                    <span className="font-bold">Certificado Adjunto:</span>
+                                    <span className="material-symbols-outlined text-[16px] text-red-700">description</span>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); showToast(`Simulando visualización de: ${d.certificadoAdjunto}`, 'info'); }} className="text-blue-600 hover:underline">{d.certificadoAdjunto}</a>
+                                  </p>
+                                )}
                                 {d.parteExamenExenta && <p className="text-sm text-stone-600 dark:text-stone-400"><span className="font-bold">Exento de:</span> {d.parteExamenExenta}</p>}
                                 {d.fechaSolicitud && <p className="text-xs text-stone-400 font-mono">Solicitado: {d.fechaSolicitud}</p>}
                               </div>

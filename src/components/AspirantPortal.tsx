@@ -118,6 +118,7 @@ export default function AspirantPortal({
 
   // Dispensa médica
   const [dispensaMotivo, setDispensaMotivo] = useState('');
+  const [dispensaFile, setDispensaFile] = useState('');
 
   const assignedTribunal = allTribunals.find(t => t.id === aspirante.assignedTribunalId);
   const convAbierta = convocatorias.filter(c => c.estado === 'Abierta');
@@ -310,6 +311,8 @@ export default function AspirantPortal({
 
   const handleSolicitarDispensa = () => {
     if (!dispensaMotivo.trim()) { showToast('Describe el motivo médico.', 'error'); return; }
+    if (!dispensaFile) { showToast('Adjunta el certificado médico.', 'error'); return; }
+
     showConfirm(
       'Solicitar Dispensa Médica',
       `¿Confirmar envío de solicitud de dispensa médica a la Federación? Motivo: ${dispensaMotivo}`,
@@ -323,7 +326,9 @@ export default function AspirantPortal({
           }
         });
         setShowDispensaModal(false);
-        showAlert('Dispensa Solicitada', 'Solicitud de dispensa médica enviada a la Federación.');
+        setDispensaFile('');
+        setDispensaMotivo('');
+        showAlert('Dispensa Solicitada', 'Solicitud de dispensa médica y certificado enviados a la Federación.');
       },
       'Solicitar Dispensa'
     );
@@ -1750,8 +1755,27 @@ export default function AspirantPortal({
                 onChange={e => setDispensaMotivo(e.target.value)}
                 rows={4}
                 placeholder="Describa la situación médica que justifica la dispensa parcial del examen..."
-                className="w-full p-2 border border-outline-variant rounded text-xs focus:ring-1 focus:ring-primary-container outline-none resize-none"
+                className="w-full p-2 border border-outline-variant rounded text-xs focus:ring-1 focus:ring-primary-container outline-none resize-none bg-white dark:bg-[#111] text-stone-800 dark:text-stone-200"
               />
+            </div>
+            <div className="flex flex-col gap-1 mb-6">
+              <label className="font-mono text-[10px] uppercase font-bold text-stone-500 dark:text-stone-400">Certificado Médico Adjunto *</label>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.png"
+                onChange={e => {
+                  if (e.target.files && e.target.files[0]) {
+                    setDispensaFile(e.target.files[0].name);
+                  }
+                }}
+                className="w-full border border-outline-variant rounded-lg p-2 text-sm focus:border-red-700 focus:ring-1 focus:ring-primary-container outline-none bg-surface-container-low dark:bg-white/5 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-stone-200 dark:file:bg-white/10 file:text-stone-800 dark:file:text-stone-200 hover:file:bg-stone-300 cursor-pointer text-stone-600 dark:text-stone-300"
+              />
+              {dispensaFile && (
+                <p className="text-[10px] text-green-700 dark:text-green-400 mt-1 font-bold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                  {dispensaFile}
+                </p>
+              )}
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowDispensaModal(false)} className="px-3 py-1.5 text-stone-600 text-sm font-semibold">Cancelar</button>

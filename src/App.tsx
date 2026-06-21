@@ -168,19 +168,43 @@ export default function App() {
     const identifier = profileIdOrEmail?.toLowerCase() || '';
 
     if (userRole === 'deportista' || userRole === 'aspirante') {
-      const foundAsp = aspirantes.find(a => a.email.toLowerCase() === identifier || a.id.toLowerCase() === identifier);
+      // Buscar perfil existente en localStorage
+      const foundAsp = aspirantes.find(a =>
+        a.email.toLowerCase() === identifier || a.id.toLowerCase() === identifier
+      );
+
       if (foundAsp) {
         setActiveUserId(foundAsp.id);
-      } else if (profileIdOrEmail && profileIdOrEmail.startsWith('REQ-')) {
-        setActiveUserId(profileIdOrEmail);
       } else {
-        // Fallback para cuando el estado local aún no se actualiza,
-        // pero getUserRoleAndProfile ya nos devolvió el ID real
-        setActiveUserId(profileIdOrEmail || 'REQ-0000');
+        // Primera vez que inicia sesión — crear perfil automáticamente
+        const newId = `asp-${Date.now()}`;
+        const newProfile: Aspirante = {
+          id: newId,
+          name: identifier.split('@')[0] || 'Deportista',
+          email: identifier,
+          club: '',
+          estilo: 'Shotokan',
+          currentBelt: 'Cinturón Blanco',
+          requestedBelt: '1º Dan',
+          status: 'Borrador',
+          progressStep: 1,
+          paymentStatus: 'Unpaid',
+          licenciasAcumuladas: 0,
+          licenciasConsecutivas: 0,
+          documents: {
+            dni: { name: '', uploaded: false },
+            photo: { name: '', uploaded: false },
+            license: { name: '', uploaded: false },
+          },
+          documentos: [],
+        };
+        // Guardar en localStorage y en el estado
+        api.createAspirante(newProfile);
+        setAspirantes(prev => [newProfile, ...prev]);
+        setActiveUserId(newId);
       }
       setRole(userRole as AppRole);
     } else if (userRole === 'director') {
-      // Director redirige al portal Admin (mismos permisos)
       setRole('admin');
     } else if (userRole === 'profesor') {
       setActiveClubName(profileIdOrEmail && profileIdOrEmail.trim().length > 0 ? profileIdOrEmail : 'Club Karate Madrid');
@@ -193,6 +217,7 @@ export default function App() {
       setRole('arbitro');
     } else {
       setRole(userRole as AppRole);
+
     }
   };
 

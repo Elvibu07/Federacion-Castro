@@ -1530,12 +1530,38 @@ export default function AdminPortal({
 
             {/* Aval */}
             {selectedAspirante.avalTecnico && (
-              <div className="p-3 bg-surface-container rounded border border-outline-variant/30">
+              <div className="p-3 bg-surface-container-low dark:bg-white/5 rounded-lg border border-outline-variant/30">
                 <span className="font-mono text-[9px] text-secondary-custom uppercase block mb-1">Aval Técnico</span>
                 <p className="text-sm font-semibold">{selectedAspirante.avalTecnico}</p>
                 <p className="text-[10px] mt-0.5">{selectedAspirante.avalAceptado ? '✅ Aceptado' : '⏳ Pendiente'}</p>
               </div>
             )}
+
+            {/* Apto Médico */}
+            <div className={`p-3 rounded-lg border ${
+              selectedAspirante.aptoMedico?.estado === 'apto' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800/30' :
+              selectedAspirante.aptoMedico?.estado === 'no_apto' ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/30' :
+              'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800/30'
+            }`}>
+              <span className="font-mono text-[9px] text-secondary-custom uppercase block mb-1">Dictamen Médico Federativo</span>
+              <div className="flex items-center gap-2">
+                <span className={`material-symbols-outlined text-[16px] ${
+                  selectedAspirante.aptoMedico?.estado === 'apto' ? 'text-green-600' :
+                  selectedAspirante.aptoMedico?.estado === 'no_apto' ? 'text-red-600' : 'text-amber-600'
+                }`}>
+                  {selectedAspirante.aptoMedico?.estado === 'apto' ? 'verified' : selectedAspirante.aptoMedico?.estado === 'no_apto' ? 'cancel' : 'pending'}
+                </span>
+                <p className={`font-bold text-sm ${
+                  selectedAspirante.aptoMedico?.estado === 'apto' ? 'text-green-800 dark:text-green-400' :
+                  selectedAspirante.aptoMedico?.estado === 'no_apto' ? 'text-red-800 dark:text-red-400' : 'text-amber-800 dark:text-amber-400'
+                }`}>
+                  {selectedAspirante.aptoMedico?.estado === 'apto' ? 'APTO MÉDICO' : selectedAspirante.aptoMedico?.estado === 'no_apto' ? 'NO APTO MÉDICO' : 'PENDIENTE DE EVALUACIÓN'}
+                </p>
+              </div>
+              {selectedAspirante.aptoMedico?.nota && (
+                <p className="text-xs mt-1.5 italic text-stone-600 dark:text-stone-400">"{selectedAspirante.aptoMedico.nota}"</p>
+              )}
+            </div>
 
             {/* Documentos */}
             <div>

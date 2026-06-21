@@ -52,6 +52,10 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
     .ilike('email', emailLower)
     .single();
 
+  if (error) {
+    console.error('[auth] Error fetching role for', emailLower, error);
+  }
+
   if (!error && data) {
     console.log(`[auth] Rol encontrado para ${emailLower}:`, data.role);
     return {

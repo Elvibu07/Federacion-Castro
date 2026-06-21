@@ -212,6 +212,7 @@ export interface Tribunal {
   judges: Judge[];
   arbitros?: Judge[]; // Auxiliares para Shiai Kumite (RF-45)
   convocatoriaId?: string;
+  fecha?: string;
 }
 
 // --- Convocatoria (RF-09 a RF-12) ---

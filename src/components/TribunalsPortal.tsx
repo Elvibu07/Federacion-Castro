@@ -69,6 +69,8 @@ export default function TribunalsPortal({
   const [selectedEvalAsp, setSelectedEvalAsp] = useState<Aspirante | null>(null);
   const [showActaModal, setShowActaModal] = useState<Aspirante | null>(null);
   const [showAddJudgeModal, setShowAddJudgeModal] = useState(false);
+  const [showAddTribunalModal, setShowAddTribunalModal] = useState(false);
+  const [newTribunalForm, setNewTribunalForm] = useState({ name: '', fecha: '', convocatoriaId: '' });
   const [newJudgeForm, setNewJudgeForm] = useState({ name: '', license: '', rank: 'Juez Regional', federacion: 'Federación Madrileña de Karate', date: '', email: '' });
   const [judgeSearch, setJudgeSearch] = useState('');
 
@@ -316,25 +318,9 @@ export default function TribunalsPortal({
         {/* Footer Actions */}
         <div className="mt-auto px-8 pt-8 border-t border-stone-100 dark:border-white/10 relative z-10 bg-white dark:bg-[#151515]">
           <button
-            onClick={async () => {
-              const name = await showPrompt({ title: 'Nombre del nuevo Tribunal:' });
-              if (name) {
-                showConfirm(
-                  'Crear Mesa',
-                  `¿Crear el tribunal "${name}"?`,
-                  () => {
-                    const newT: Tribunal = { id: String(Date.now()), name, isMain: false, judges: [] };
-                    if (onAddTribunalAtomic) {
-                      onAddTribunalAtomic(newT);
-                    } else {
-                      onUpdateTribunals([...tribunals, newT]);
-                    }
-                    setActiveTab('tribunales');
-                    showAlert('Tribunal Creado', `Tribunal "${name}" creado exitosamente.`);
-                  },
-                  'Crear'
-                );
-              }
+            onClick={() => {
+              setNewTribunalForm({ name: '', fecha: '', convocatoriaId: '' });
+              setShowAddTribunalModal(true);
             }}
             className="w-full flex items-center justify-center gap-3 px-5 py-4 mb-4 bg-red-700 hover:bg-red-800 text-white text-sm font-bold rounded-xl shadow-lg shadow-red-700/20 transition-all hover:-translate-y-0.5"
           >
@@ -472,6 +458,8 @@ export default function TribunalsPortal({
                     <div className="flex justify-between items-start mb-6 relative">
                       <div>
                         <h4 className="font-black text-2xl text-stone-800 dark:text-stone-100">{trib.name}</h4>
+                        {trib.fecha && <p className="text-xs text-stone-500 font-medium mt-1"><span className="material-symbols-outlined text-[14px] align-middle mr-1">calendar_today</span>{new Date(trib.fecha).toLocaleDateString()}</p>}
+                        {trib.convocatoriaId && <p className="text-xs text-stone-500 font-medium"><span className="material-symbols-outlined text-[14px] align-middle mr-1">event</span>{convocatorias?.find(c => c.id === trib.convocatoriaId)?.titulo || 'Convocatoria'}</p>}
                         <p className="text-sm text-stone-400 font-bold uppercase tracking-wider mt-1">{trib.judges.length} Jueces Asignados</p>
                       </div>
                       <div className="bg-stone-50 dark:bg-white/5 text-stone-600 font-mono font-bold text-base px-4 py-1.5 rounded-lg border border-stone-200 dark:border-white/20 shadow-sm">
@@ -557,6 +545,8 @@ export default function TribunalsPortal({
                         <div className="flex justify-between items-start mb-6 relative z-10">
                           <div>
                             <h4 className="font-black text-xl text-stone-800 dark:text-stone-100">{trib.name}</h4>
+                            {trib.fecha && <p className="text-xs text-stone-500 font-medium mt-1"><span className="material-symbols-outlined text-[14px] align-middle mr-1">calendar_today</span>{new Date(trib.fecha).toLocaleDateString()}</p>}
+                            {trib.convocatoriaId && <p className="text-[10px] text-stone-400 font-medium leading-tight mt-0.5"><span className="material-symbols-outlined text-[14px] align-middle mr-1">event</span>{convocatorias?.find(c => c.id === trib.convocatoriaId)?.titulo || 'Convocatoria'}</p>}
                             <div className="mt-2">
                               {trib.isMain
                                 ? <span className="font-bold text-[10px] text-red-700 bg-red-50 border border-red-100 py-1 px-3 rounded-full uppercase tracking-widest shadow-sm">Mesa Principal</span>
@@ -1260,6 +1250,111 @@ export default function TribunalsPortal({
           </div>
         </div>
       )}
+
+      {/* ── Modal Add Tribunal ── */}
+      {showAddTribunalModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#151515] rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-stone-200 dark:border-white/10 animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-stone-100 dark:border-white/10 flex justify-between items-center bg-stone-50/50 dark:bg-white/5">
+              <h3 className="font-black text-lg text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-600">add_business</span>
+                Crear Nueva Mesa
+              </h3>
+              <button onClick={() => setShowAddTribunalModal(false)} className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-200 dark:hover:bg-white/10">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!newTribunalForm.name.trim()) return;
+              
+              showConfirm(
+                'Crear Mesa',
+                `¿Crear el tribunal "${newTribunalForm.name.trim()}"?`,
+                () => {
+                  const newT: Tribunal = { 
+                    id: String(Date.now()), 
+                    name: newTribunalForm.name.trim(), 
+                    isMain: false, 
+                    judges: [],
+                    fecha: newTribunalForm.fecha || undefined,
+                    convocatoriaId: newTribunalForm.convocatoriaId || undefined
+                  };
+                  if (onAddTribunalAtomic) {
+                    onAddTribunalAtomic(newT);
+                  } else {
+                    onUpdateTribunals([...tribunals, newT]);
+                  }
+                  setActiveTab('tribunales');
+                  setShowAddTribunalModal(false);
+                  showAlert('Tribunal Creado', `Tribunal "${newT.name}" creado exitosamente.`);
+                },
+                'Crear'
+              );
+            }} className="p-6">
+              
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-stone-600 uppercase tracking-wider">Nombre de la Mesa *</label>
+                  <input
+                    required
+                    type="text"
+                    value={newTribunalForm.name}
+                    onChange={e => setNewTribunalForm({...newTribunalForm, name: e.target.value})}
+                    placeholder="E.g. Tribunal A - Kyu"
+                    className="w-full bg-stone-50 dark:bg-[#111] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-100 placeholder-stone-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-stone-600 uppercase tracking-wider">Fecha Asignada</label>
+                  <input
+                    type="date"
+                    value={newTribunalForm.fecha}
+                    onChange={e => setNewTribunalForm({...newTribunalForm, fecha: e.target.value})}
+                    className="w-full bg-stone-50 dark:bg-[#111] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-100 placeholder-stone-400 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                  />
+                </div>
+
+                {convocatorias && convocatorias.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-stone-600 uppercase tracking-wider">Convocatoria Relacionada</label>
+                    <select
+                      value={newTribunalForm.convocatoriaId}
+                      onChange={e => setNewTribunalForm({...newTribunalForm, convocatoriaId: e.target.value})}
+                      className="w-full bg-stone-50 dark:bg-[#111] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                    >
+                      <option value="">Ninguna / Abierta</option>
+                      {convocatorias.map(c => (
+                        <option key={c.id} value={c.id}>{c.titulo} ({new Date(c.fecha).toLocaleDateString()})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-stone-100 dark:border-white/10 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTribunalModal(false)}
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100 hover:bg-stone-100 dark:bg-white/10 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold text-sm rounded-xl shadow-lg shadow-red-700/20 transition-all flex items-center gap-2 hover:-translate-y-0.5"
+                >
+                  <span className="material-symbols-outlined text-[18px]">save</span>
+                  Guardar Mesa
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

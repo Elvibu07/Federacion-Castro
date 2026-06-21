@@ -121,6 +121,11 @@ export default function App() {
     await api.createTribunal(newTribunal);
   };
 
+  const removeTribunalAtomic = async (id: string) => {
+    setTribunals(prev => prev.filter(t => t.id !== id));
+    await api.deleteTribunal(id);
+  };
+
   const updateJudgeAtomic = async (id: string, updates: Partial<Judge>) => {
     setJudges(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
     await api.updateJudge(id, updates);
@@ -205,16 +210,29 @@ export default function App() {
       }
       setRole(userRole as AppRole);
     } else if (userRole === 'director') {
-      setRole('admin');
+      setRole('tribunal');
     } else if (userRole === 'profesor') {
       setActiveClubName(profileIdOrEmail && profileIdOrEmail.trim().length > 0 ? profileIdOrEmail : 'Club Karate Madrid');
       setRole('profesor');
-    } else if (userRole === 'juez') {
-      setActiveUserId(profileIdOrEmail || 'j-1');
-      setRole('juez');
-    } else if (userRole === 'arbitro') {
-      setActiveUserId(profileIdOrEmail || 'Arb-Kumite-01');
-      setRole('arbitro');
+    } else if (userRole === 'juez' || userRole === 'arbitro') {
+      const foundJudge = judges.find(j => j.email.toLowerCase() === identifier || j.id.toLowerCase() === identifier);
+      if (foundJudge) {
+        setActiveUserId(foundJudge.id);
+      } else {
+        const newId = `j-${Date.now()}`;
+        const newJudge: Judge = {
+          id: newId,
+          name: identifier.split('@')[0] || 'Juez',
+          email: identifier,
+          avatarUrl: '',
+          rank: userRole === 'arbitro' ? 'Árbitro Nacional' : 'Juez Regional',
+          active: true
+        };
+        api.createJudge(newJudge);
+        setJudges(prev => [...prev, newJudge]);
+        setActiveUserId(newId);
+      }
+      setRole(userRole as AppRole);
     } else {
       setRole(userRole as AppRole);
 
@@ -463,6 +481,7 @@ export default function App() {
             onUpdateTribunals={setTribunals}
             onUpdateTribunalAtomic={updateTribunalAtomic}
             onAddTribunalAtomic={addTribunalAtomic}
+            onRemoveTribunalAtomic={removeTribunalAtomic}
             convocatorias={convocatorias}
             onLogout={() => setRole('login')}
           />

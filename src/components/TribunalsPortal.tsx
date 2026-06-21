@@ -12,6 +12,7 @@ interface TribunalsPortalProps {
   onUpdateTribunals: (updated: Tribunal[]) => void;
   onUpdateTribunalAtomic?: (id: string, updates: Partial<Tribunal>) => void;
   onAddTribunalAtomic?: (newTribunal: Tribunal) => void;
+  onRemoveTribunalAtomic?: (id: string) => void;
   onUpdateAspirantes: (updated: Aspirante[]) => void;
   onUpdateAspiranteAtomic?: (id: string, updates: Partial<Aspirante>) => void;
   onUpdateJudges?: (updated: Judge[]) => void;
@@ -57,6 +58,7 @@ export default function TribunalsPortal({
   onUpdateTribunals,
   onUpdateTribunalAtomic,
   onAddTribunalAtomic,
+  onRemoveTribunalAtomic,
   onUpdateAspirantes,
   onUpdateAspiranteAtomic,
   onUpdateJudges,
@@ -175,10 +177,11 @@ export default function TribunalsPortal({
       `¿Estás seguro de que deseas eliminar permanentemente el tribunal "${tribName}"? Esta acción desasignará a todos los aspirantes de esta mesa.`,
       () => {
         // Remover tribunal
-        // Si hay una API para borrar: api.deleteTribunal, pero por ahora no hay onRemoveTribunalAtomic.
-        // Hacemos el fallback de array completo si no hay api o requerimos array mapping.
-        // Asumo que onUpdateTribunals maneja la eliminación de forma cruda si no hay Atomic delete (aún no se requiere)
-        onUpdateTribunals(tribunals.filter(t => t.id !== tribId));
+        if (onRemoveTribunalAtomic) {
+          onRemoveTribunalAtomic(tribId);
+        } else {
+          onUpdateTribunals(tribunals.filter(t => t.id !== tribId));
+        }
         
         // Desasignar aspirantes de ese tribunal
         if (onUpdateAspiranteAtomic) {
@@ -522,8 +525,8 @@ export default function TribunalsPortal({
                               else if (val) handleAssignJudge(judge.id, val);
                             }}
                           >
-                            <option value="">-- Sin Asignar --</option>
-                            {tribunals.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            <option value="" className="bg-white dark:bg-[#151515] text-stone-800 dark:text-stone-100">-- Sin Asignar --</option>
+                            {tribunals.map(t => <option key={t.id} value={t.id} className="bg-white dark:bg-[#151515] text-stone-800 dark:text-stone-100">{t.name}</option>)}
                           </select>
                         </div>
                       </div>
@@ -1325,9 +1328,9 @@ export default function TribunalsPortal({
                       onChange={e => setNewTribunalForm({...newTribunalForm, convocatoriaId: e.target.value})}
                       className="w-full bg-stone-50 dark:bg-[#111] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-stone-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
                     >
-                      <option value="">Ninguna / Abierta</option>
+                      <option value="" className="bg-white dark:bg-[#151515] text-stone-800 dark:text-stone-100">Ninguna / Abierta</option>
                       {convocatorias.map(c => (
-                        <option key={c.id} value={c.id}>{c.titulo} ({new Date(c.fecha).toLocaleDateString()})</option>
+                        <option key={c.id} value={c.id} className="bg-white dark:bg-[#151515] text-stone-800 dark:text-stone-100">{c.titulo} ({new Date(c.fecha).toLocaleDateString()})</option>
                       ))}
                     </select>
                   </div>

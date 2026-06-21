@@ -126,6 +126,12 @@ export async function updateTribunal(id: string, updates: Partial<Tribunal>): Pr
   return true;
 }
 
+export async function deleteTribunal(id: string): Promise<boolean> {
+  const list = ls_get<Tribunal>(KEYS.TRIBUNALES);
+  ls_set(KEYS.TRIBUNALES, list.filter(t => t.id !== id));
+  return true;
+}
+
 // ==========================================
 // JUDGES
 // ==========================================

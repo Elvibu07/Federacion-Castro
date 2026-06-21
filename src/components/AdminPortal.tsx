@@ -71,6 +71,7 @@ export default function AdminPortal({
   judges = [],
   onUpdateJudges,
   onUpdateJudgeAtomic,
+  onAddJudgeAtomic,
   convocatorias,
   onUpdateConvocatorias,
   onUpdateConvocatoriaAtomic,

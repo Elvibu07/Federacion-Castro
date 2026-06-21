@@ -87,13 +87,24 @@ export default function TribunalsPortal({
   const handleAssignJudge = (judgeId: string, tribunalId: string) => {
     const targetJudge = judges.find(j => j.id === judgeId);
     if (!targetJudge) return;
-    const updated = tribunals.map(t => ({
-      ...t,
-      judges: t.id === tribunalId
-        ? [...t.judges.filter(j => j.id !== judgeId), targetJudge]
-        : t.judges.filter(j => j.id !== judgeId),
-    }));
-    onUpdateTribunals(updated);
+
+    if (onUpdateTribunalAtomic) {
+      tribunals.forEach(t => {
+        if (t.id === tribunalId) {
+          onUpdateTribunalAtomic(t.id, { judges: [...t.judges.filter(j => j.id !== judgeId), targetJudge] });
+        } else if (t.judges.some(j => j.id === judgeId)) {
+          onUpdateTribunalAtomic(t.id, { judges: t.judges.filter(j => j.id !== judgeId) });
+        }
+      });
+    } else {
+      const updated = tribunals.map(t => ({
+        ...t,
+        judges: t.id === tribunalId
+          ? [...t.judges.filter(j => j.id !== judgeId), targetJudge]
+          : t.judges.filter(j => j.id !== judgeId),
+      }));
+      onUpdateTribunals(updated);
+    }
   };
 
   const handleRemoveJudge = (judgeId: string, tribunalId: string) => {

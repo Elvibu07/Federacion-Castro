@@ -1,51 +1,54 @@
-import { supabase } from './supabase';
+import { signInWithEmailAndPassword, sendSignInLinkToEmail, updatePassword as firebaseUpdatePassword, signOut as firebaseSignOut } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from './firebase';
 
 export type UserRoleType = 'aspirante' | 'deportista' | 'admin' | 'tribunal' | 'director' | 'juez' | 'arbitro' | 'medico' | null;
 
 export async function signInWithPassword(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error: any) {
     console.error('Error al iniciar sesión:', error.message);
     throw error;
   }
-  return data.session;
 }
 
 export async function sendMagicLinkForFirstTime(email: string, name?: string, role?: string) {
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: window.location.origin + '?type=recovery',
-      data: {
-        full_name: name,
-        role: role
-      }
-    },
-  });
-  if (error) {
+  const actionCodeSettings = {
+    // URL you want to redirect back to. The domain (www.example.com) for this
+    // URL must be in the authorized domains list in the Firebase Console.
+    url: window.location.origin + '?type=recovery',
+    handleCodeInApp: true,
+  };
+
+  try {
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem('emailForSignIn', email);
+  } catch (error: any) {
     console.error('Error enviando enlace mágico:', error.message);
     throw error;
   }
 }
 
 export async function updatePassword(newPassword: string) {
-  const { data, error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) {
-    console.error('Error actualizando contraseña:', error.message);
-    throw error;
+  if (auth.currentUser) {
+    try {
+      await firebaseUpdatePassword(auth.currentUser, newPassword);
+      return true;
+    } catch (error: any) {
+      console.error('Error actualizando contraseña:', error.message);
+      throw error;
+    }
   }
-  return data;
+  throw new Error('No hay usuario autenticado');
 }
 
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.warn('Supabase sign out error (ignoring for local logout):', error.message);
-    }
+    await firebaseSignOut(auth);
   } catch (err) {
-    console.warn('Supabase sign out exception:', err);
+    console.warn('Firebase sign out exception:', err);
   }
 }
 
@@ -53,28 +56,24 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
   const emailLower = email.toLowerCase().trim();
 
   try {
-    // 1. Intentar consultar la tabla user_roles en Supabase (Staff)
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .ilike('email', emailLower)
-      .single();
+    // 1. Intentar consultar la coleccion user_roles en Firebase (Staff)
+    const qRole = query(collection(db, "user_roles"), where("email", "==", emailLower));
+    const roleSnapshot = await getDocs(qRole);
 
-    if (!roleError && roleData && roleData.role) {
-      console.log(`[auth] Rol encontrado en Supabase (user_roles) para ${emailLower}:`, roleData.role);
+    if (!roleSnapshot.empty) {
+      const roleData = roleSnapshot.docs[0].data();
+      console.log(`[auth] Rol encontrado en Firebase (user_roles) para ${emailLower}:`, roleData.rol);
       return {
-        role: roleData.role as UserRoleType
+        role: roleData.rol as UserRoleType
       };
     }
 
-    // 2. Si no es staff, buscar en la tabla aspirantes
-    const { data: aspData, error: aspError } = await supabase
-      .from('aspirantes')
-      .select('id')
-      .ilike('email', emailLower)
-      .single();
+    // 2. Si no es staff, buscar en la coleccion aspirantes
+    const qAsp = query(collection(db, "aspirantes"), where("email", "==", emailLower));
+    const aspSnapshot = await getDocs(qAsp);
 
-    if (!aspError && aspData) {
+    if (!aspSnapshot.empty) {
+      const aspData = aspSnapshot.docs[0];
       console.log(`[auth] Estudiante encontrado en tabla aspirantes para ${emailLower}`);
       return {
         role: 'aspirante',
@@ -82,11 +81,10 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
       };
     }
   } catch (e) {
-    console.error('[auth] Excepción al consultar Supabase:', e);
+    console.error('[auth] Excepción al consultar Firebase:', e);
   }
 
   // 3. SISTEMA DE RESPALDO GARANTIZADO (FALLBACK HARDCODEADO)
-  // Si Supabase falla por caché, bloqueadores de anuncios o red, esto garantiza el acceso.
   console.warn(`[auth] Usando sistema de respaldo local para ${emailLower}...`);
   
   if (emailLower === 'lionchan07@gmail.com') return { role: 'director' };
@@ -95,7 +93,7 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
   if (emailLower === 'paginasusar@gmail.com') return { role: 'medico' };
   if (emailLower === 'arbitro@gmail.com') return { role: 'arbitro' };
 
-  // 4. Si no está en Supabase ni en el respaldo, asumir nuevo estudiante
+  // 4. Si no está en Firebase ni en el respaldo, asumir nuevo estudiante
   console.warn(`[auth] No se encontró rol para ${emailLower}. Rol por defecto: aspirante`);
   return { role: 'aspirante' };
 }

@@ -100,22 +100,29 @@ export default function ArbitroPortal({
           baseDetalles.kumiteDetalles = { modalidad: 'Shiai Kumite', encuentros: 3, proteccionesWKF: true };
         }
 
-        const resultadoStr = `AKA ${scoreAka} - ${scoreAo} AO${senshu ? ` (Senshu ${senshu.toUpperCase()})` : ''}`;
-
-        updateEval(aspId, {
+        const updatedEv: Evaluacion = {
           ...ev,
           bloqueEspecifico: {
             ...baseDetalles,
-            iniciado: true,
+            resultado: scoreAka > scoreAo ? 'Apto' : scoreAka < scoreAo ? 'No Apto' : 'Apto',
             completado: true,
             kumiteDetalles: {
               ...baseDetalles.kumiteDetalles,
-              resultadoCombate: resultadoStr,
+              puntosAka: scoreAka,
+              puntosAo: scoreAo,
+              resultadoCombate: scoreAka > scoreAo ? 'Victoria AKA' : scoreAka < scoreAo ? 'Victoria AO' : 'Empate (Hantei a favor)'
             }
-          },
-        });
+          }
+        };
 
-        showAlert('Resultado Enviado', `El resultado de Kumite para ${asp.name} ha sido enviado exitosamente al Tribunal.`);
+        updateEval(aspId, updatedEv);
+        
+        if (onUpdateAspiranteAtomic) {
+          onUpdateAspiranteAtomic(aspId, { status: 'Evaluación finalizada' });
+        }
+        
+        showAlert('Resultados Enviados', `Los resultados del combate de ${asp.name} han sido registrados.`);
+        handleSelectAsp(aspId);
       },
       'Enviar Calificación'
     );
@@ -123,6 +130,17 @@ export default function ArbitroPortal({
 
   const selectedAsp = selectedAspId ? kumiteAspirantes.find(a => a.id === selectedAspId) : null;
   const evSelected = selectedAsp ? getOrBuildEval(selectedAsp) : null;
+
+  if (!activeArbitroId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-[#0a0a0a] text-stone-900 dark:text-stone-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#8b0000] border-t-transparent rounded-full animate-spin"></div>
+          <p className="font-mono text-sm tracking-wider animate-pulse">Cargando perfil de árbitro...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex">

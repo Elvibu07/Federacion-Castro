@@ -56,7 +56,18 @@ export default function JudgePortal({
 
   // Identify the active judge and their assigned tribunal
   const activeJudge = judges.find(j => j.id === activeJudgeId);
-  const myTribunal = tribunals.find(t => t.judges.some(j => j.id === activeJudgeId));
+  const myTribunal = tribunals.find(t => t.judges?.some(j => j.id === activeJudgeId));
+
+  if (!activeJudge) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-[#0a0a0a] text-stone-900 dark:text-stone-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-[#8b0000] border-t-transparent rounded-full animate-spin"></div>
+          <p className="font-mono text-sm tracking-wider animate-pulse">Cargando perfil del juez...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Find aspirantes assigned to my tribunal who are admitted/in-evaluation
   const myAspirantes = useMemo(() => {

@@ -71,8 +71,8 @@ export default function App() {
 
         // Check auth session — wrap in its own race with 5s timeout
         try {
+          const { auth } = await import('./lib/firebase');
           const checkAuth = new Promise<any>((resolve) => {
-            const { auth } = require('./lib/firebase');
             const unsubscribe = auth.onAuthStateChanged((user: any) => {
               unsubscribe();
               resolve(user);
@@ -84,23 +84,10 @@ export default function App() {
             new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
           ]);
 
-          const { auth } = require('./lib/firebase');
-          const { isSignInWithEmailLink, signInWithEmailLink } = require('firebase/auth');
-
-          if (isSignInWithEmailLink(auth, window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            if (!email) {
-              email = window.prompt('Por favor, confirma tu correo electrónico para acceder:');
-            }
-            if (email) {
-              try {
-                const result = await signInWithEmailLink(auth, email, window.location.href);
-                window.localStorage.removeItem('emailForSignIn');
-                user = result.user;
-              } catch (err) {
-                console.error('Error signing in with email link:', err);
-              }
-            }
+          const { checkAndApplyMagicLink } = await import('./lib/auth');
+          const magicUser = await checkAndApplyMagicLink();
+          if (magicUser) {
+            user = magicUser;
           }
           
           if (user && user.email) {

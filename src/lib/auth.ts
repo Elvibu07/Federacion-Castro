@@ -1,8 +1,27 @@
-import { signInWithEmailAndPassword, sendSignInLinkToEmail, updatePassword as firebaseUpdatePassword, signOut as firebaseSignOut } from "firebase/auth";
+import { signInWithEmailAndPassword, sendSignInLinkToEmail, updatePassword as firebaseUpdatePassword, signOut as firebaseSignOut, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from './firebase';
 
 export type UserRoleType = 'aspirante' | 'deportista' | 'admin' | 'tribunal' | 'director' | 'juez' | 'arbitro' | 'medico' | null;
+
+export async function checkAndApplyMagicLink() {
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    let email = window.localStorage.getItem('emailForSignIn');
+    if (!email) {
+      email = window.prompt('Por favor, confirma tu correo electrónico para acceder:');
+    }
+    if (email) {
+      try {
+        const result = await signInWithEmailLink(auth, email, window.location.href);
+        window.localStorage.removeItem('emailForSignIn');
+        return result.user;
+      } catch (err) {
+        console.error('Error signing in with email link:', err);
+      }
+    }
+  }
+  return null;
+}
 
 export async function signInWithPassword(email: string, password: string) {
   try {

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Aspirante, Judge, Tribunal, Convocatoria, Evaluacion, ParteBloqueComun, VotoJuez, ViaExamen } from '../types';
 import { GRADOS_CONFIG } from '../data';
+import { generateUUID } from '../lib/uuid';
 import ActaImprimible from './ActaImprimible';
 import ConfiguracionPerfilFederativo from './ConfiguracionPerfilFederativo';
 import { useUI } from '../contexts/UIContext';
 
 interface TribunalsPortalProps {
   judges: Judge[];
+  activeJudgeId?: string;
   tribunals: Tribunal[];
   aspirantes: Aspirante[];
   onUpdateTribunals: (updated: Tribunal[]) => void;
@@ -53,6 +55,7 @@ function buildEvaluacion(aspId: string): Evaluacion {
 
 export default function TribunalsPortal({
   judges,
+  activeJudgeId,
   tribunals,
   aspirantes,
   onUpdateTribunals,
@@ -128,20 +131,30 @@ export default function TribunalsPortal({
 
   const submitNewJudge = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!onUpdateJudges || !newJudgeForm.name.trim()) return;
+    if (!onUpdateJudges || !newJudgeForm.name.trim() || !newJudgeForm.email.trim()) return;
+
+    const emailLower = newJudgeForm.email.trim().toLowerCase();
+    if (judges.some(j => j.email?.toLowerCase() === emailLower)) {
+      showAlert('Correo Registrado', `El correo ${emailLower} ya está registrado en el padrón de personal.`);
+      return;
+    }
 
     showConfirm(
       'Registrar Juez',
       `¿Confirmar el registro de ${newJudgeForm.name} como ${newJudgeForm.rank}?`,
-      () => {
+      async () => {
         const newJudge: Judge = {
-          id: `Juez-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          id: generateUUID(),
           name: newJudgeForm.name.trim(),
+          email: newJudgeForm.email.trim(),
           rank: newJudgeForm.rank,
           avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newJudgeForm.name.trim())}&background=random`
         };
 
         onUpdateJudges([...judges, newJudge]);
+        // Persist to Supabase
+        const { createJudge } = await import('../lib/api');
+        await createJudge(newJudge);
         setShowAddJudgeModal(false);
         showAlert('Registro Exitoso', `Juez ${newJudge.name} registrado con éxito.`);
       },
@@ -301,8 +314,10 @@ export default function TribunalsPortal({
               <span className="text-white font-black tracking-tighter text-base">FMK</span>
             </div>
             <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight">Portal Tribunales</h2>
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Federación Madrileña</p>
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={judges.find(j => j.id === activeJudgeId)?.name || 'HolaSoyGerman'}>
+                {judges.find(j => j.id === activeJudgeId)?.name || 'HolaSoyGerman'}
+              </h2>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal de Tribunales</p>
             </div>
           </div>
           <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
@@ -343,7 +358,7 @@ export default function TribunalsPortal({
           
           <button
             onClick={onLogout}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:text-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-sm font-bold cursor-pointer"
+            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:border-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-sm font-bold cursor-pointer"
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>
             Cerrar Sesión
@@ -508,20 +523,25 @@ export default function TribunalsPortal({
               {/* Panel jueces disponibles */}
               <aside className="w-full xl:w-1/3">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-black text-lg text-stone-800 dark:text-stone-100">Padrón de Jueces</h3>
-                  <span className="bg-red-50 text-red-700 border border-red-100 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Con Cobertura</span>
+                  <h3 className="font-black text-lg text-stone-800 dark:text-stone-100">Personal Federativo</h3>
+                  <span className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/30 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Con Cobertura</span>
                 </div>
                 <div className="bg-white dark:bg-[#151515] border border-stone-100 dark:border-white/10 rounded-3xl shadow-xl shadow-stone-200/50 p-4 flex flex-col gap-4 min-h-[400px]">
-                  {judges.map(judge => {
+                  {Array.from(new Map(judges.map(j => [j.name.trim().toLowerCase(), j])).values())
+                    .filter(j => !j.rank.toLowerCase().includes('director'))
+                    .map(judge => {
                     const assignedTo = tribunals.find(t => t.judges.some(j => j.id === judge.id));
                     return (
                       <div key={judge.id} className="group flex flex-col p-4 bg-white dark:bg-[#151515] hover:bg-stone-50 dark:hover:bg-white/5/80 rounded-2xl border border-stone-200 dark:border-white/20 hover:border-red-200 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-4 mb-3">
-                          <img alt={judge.name} className="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-white" src={judge.avatarUrl} referrerPolicy="no-referrer" />
+                          <img alt={judge.name} className="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-white dark:ring-[#151515]" src={judge.avatarUrl} referrerPolicy="no-referrer" />
                           <div>
                             <p className="font-sans font-black text-stone-800 dark:text-stone-100 leading-tight">{judge.name}</p>
                             <span className={`inline-block font-bold text-[9px] uppercase tracking-wider mt-1 px-2 py-0.5 rounded-md ${
-                              judge.rank === 'Juez Internacional' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-stone-100 dark:bg-white/10 text-stone-600 border border-stone-200 dark:border-white/20'
+                              judge.rank === 'Juez Internacional' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-800/30' : 
+                              judge.rank === 'Médico' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800/30' :
+                              judge.rank === 'Árbitro Nacional' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800/30' :
+                              'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-white/20'
                             }`}>{judge.rank}</span>
                           </div>
                         </div>
@@ -909,28 +929,25 @@ export default function TribunalsPortal({
         )}
 
         {/* ════════════════════════════════════════════════
-            TAB: PADRÓN DE JUECES
-           ════════════════════════════════════════════════ */}
-        {/* ════════════════════════════════════════════════
-            TAB: PADRÓN DE JUECES
+            TAB: PADRÓN DE PERSONAL FEDERATIVO
            ════════════════════════════════════════════════ */}
         {activeTab === 'jueces' && (
           <main className="flex-1 p-6 lg:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
               <div>
                 <h2 className="font-black text-3xl text-stone-800 dark:text-stone-100 tracking-tight flex items-center gap-3">
-                  Padrón de Jueces
+                  Padrón de Personal Federativo
                   {onUpdateJudges && (
                     <button
                       onClick={handleAddJudge}
                       className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-full shadow-md shadow-red-700/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 ml-2"
                     >
                       <span className="material-symbols-outlined text-[16px]">person_add</span>
-                      Registrar Juez
+                      Registrar Personal
                     </button>
                   )}
                 </h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-2">Colegio de jueces con cobertura vigente para evaluación de grados (RF-42).</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400 mt-2">Colegio de jueces, árbitros y médicos con cobertura vigente (RF-42).</p>
               </div>
               <div className="relative w-full lg:w-80">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-[20px]">search</span>
@@ -945,7 +962,10 @@ export default function TribunalsPortal({
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {judges.filter(j => j.name.toLowerCase().includes(judgeSearch.toLowerCase()) || j.rank.toLowerCase().includes(judgeSearch.toLowerCase())).map(j => {
+              {Array.from(new Map(judges.map(j => [j.name.trim().toLowerCase(), j])).values())
+                .filter(j => !j.rank.toLowerCase().includes('director'))
+                .filter(j => j.name.toLowerCase().includes(judgeSearch.toLowerCase()) || j.rank.toLowerCase().includes(judgeSearch.toLowerCase()))
+                .map(j => {
                 const tribAsig = tribunals.find(t => t.judges.some(jj => jj.id === j.id));
                 const evaluacionesHechas = Math.floor(Math.random() * 20) + 5; 
                 return (
@@ -954,13 +974,16 @@ export default function TribunalsPortal({
                     <div className="flex items-start gap-5">
                       <div className="relative">
                         <img alt={j.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-stone-100 dark:border-white/10 shadow-sm" src={j.avatarUrl} referrerPolicy="no-referrer" />
-                        <div className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${tribAsig ? 'bg-amber-400' : 'bg-green-500'}`} title={tribAsig ? 'Ocupado' : 'Disponible'}>
+                        <div className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-4 border-white dark:border-[#151515] flex items-center justify-center shadow-sm ${tribAsig ? 'bg-amber-400' : 'bg-green-500'}`} title={tribAsig ? 'Ocupado' : 'Disponible'}>
                         </div>
                       </div>
                       <div className="flex-1 pt-1">
                         <p className="font-black text-lg text-stone-800 dark:text-stone-100 leading-tight mb-1">{j.name}</p>
                         <span className={`inline-block text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                          j.rank === 'Juez Internacional' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-stone-50 dark:bg-white/5 text-stone-600 border-stone-200 dark:border-white/20'
+                          j.rank === 'Juez Internacional' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-100 dark:border-red-800/30' : 
+                          j.rank === 'Médico' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800/30' :
+                          j.rank === 'Árbitro Nacional' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-100 dark:border-green-800/30' :
+                          'bg-stone-50 dark:bg-white/10 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-white/20'
                         }`}>{j.rank}</span>
                         
                         <div className="mt-3">
@@ -1072,8 +1095,8 @@ export default function TribunalsPortal({
           <main className="flex-1 p-6 lg:p-10 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full flex flex-col items-start">
             <ConfiguracionPerfilFederativo 
               roleName="Administrador de Tribunales" 
-              defaultName="Director de Tribunales" 
-              defaultEmail="No registrado"
+              defaultName={judges.find(j => j.id === activeJudgeId)?.name || "Director de Tribunales"} 
+              defaultEmail={judges.find(j => j.id === activeJudgeId)?.email || "No registrado"}
             />
           </main>
         )}
@@ -1287,8 +1310,8 @@ export default function TribunalsPortal({
                 'Crear Mesa',
                 `¿Crear el tribunal "${newTribunalForm.name.trim()}"?`,
                 () => {
-                  const newT: Tribunal = { 
-                    id: String(Date.now()), 
+                  const nuevoTribunal: Tribunal = { 
+                    id: generateUUID(), 
                     name: newTribunalForm.name.trim(), 
                     isMain: false, 
                     judges: [],
@@ -1296,13 +1319,13 @@ export default function TribunalsPortal({
                     convocatoriaId: newTribunalForm.convocatoriaId || undefined
                   };
                   if (onAddTribunalAtomic) {
-                    onAddTribunalAtomic(newT);
+                    onAddTribunalAtomic(nuevoTribunal);
                   } else {
-                    onUpdateTribunals([...tribunals, newT]);
+                    onUpdateTribunals([...tribunals, nuevoTribunal]);
                   }
                   setActiveTab('tribunales');
                   setShowAddTribunalModal(false);
-                  showAlert('Tribunal Creado', `Tribunal "${newT.name}" creado exitosamente.`);
+                  showAlert('Tribunal Creado', `Tribunal "${nuevoTribunal.name}" creado exitosamente.`);
                 },
                 'Crear'
               );

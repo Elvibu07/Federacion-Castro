@@ -3,7 +3,7 @@ import { useUI } from '../contexts/UIContext';
 import { signInWithPassword, sendMagicLinkForFirstTime, getUserRoleAndProfile, UserRoleType } from '../lib/auth';
 
 interface LoginPortalProps {
-  onLogin: (role: UserRoleType, userEmail?: string) => void;
+  onLogin: (role: UserRoleType, userEmail?: string, fullName?: string) => void;
   onBack?: () => void;
 }
 
@@ -22,6 +22,7 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotMode, setIsForgotMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +58,15 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
     try {
       const session = await signInWithPassword(email.trim().toLowerCase(), password);
       if (session) {
-        const { role, profileId } = await getUserRoleAndProfile(email.trim().toLowerCase());
-        onLogin(role, profileId || email.trim().toLowerCase());
+        const userMetadata = session.user?.user_metadata || {};
+        const metaRole = userMetadata.role;
+        const metaName = userMetadata.full_name;
+
+        let { role, profileId } = await getUserRoleAndProfile(email.trim().toLowerCase());
+        if (!role && metaRole) {
+          role = metaRole;
+        }
+        onLogin(role || 'deportista', profileId || email.trim().toLowerCase(), metaName);
       }
     } catch (err: any) {
       setError('Credenciales incorrectas o usuario no encontrado.');
@@ -185,12 +193,21 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary-custom text-lg">lock</span>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-custom focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-12 py-3 bg-surface-container-low border border-outline-variant rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-custom focus:border-transparent transition-all"
                     placeholder="••••••••"
                   />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-custom hover:text-on-surface transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
                 </div>
               </div>
             )}
@@ -220,6 +237,32 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
               </button>
             )}
           </div>
+
+          {/* ACCESO RÁPIDO PARA DEMOSTRACIÓN */}
+          <div className="mt-12 pt-6 border-t border-outline-variant/30">
+            <p className="text-xs font-bold text-secondary-custom uppercase tracking-wider text-center mb-4">Acceso Rápido (Demo)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => onLogin('admin', 'elvialeonsh@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Oficina Central (Admin)
+              </button>
+              <button type="button" onClick={() => onLogin('aspirante', 'elvia.leon.heredia@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Aspirante (Deportista)
+              </button>
+              <button type="button" onClick={() => onLogin('juez', 'elviaheredia53@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Mesa Evaluadora (Juez)
+              </button>
+              <button type="button" onClick={() => onLogin('director', 'lionchan07@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Director (Tribunales)
+              </button>
+              <button type="button" onClick={() => onLogin('medico', 'paginasusar@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Tribunal Médico (Dispensa)
+              </button>
+              <button type="button" onClick={() => onLogin('arbitro', 'arbitro@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
+                Árbitro (Kumite)
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

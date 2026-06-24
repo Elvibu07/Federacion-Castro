@@ -205,8 +205,8 @@ export default function JudgePortal({
         <div className="flex items-center gap-2">
            <img src={activeJudge.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full border-2 border-red-600 shadow-sm" />
            <div>
-             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block">{activeJudge.name}</span>
-             <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest block">{activeJudge.rank}</span>
+             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={activeJudge.name}>{activeJudge.name}</span>
+             <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal del Juez</span>
            </div>
         </div>
         <div className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export default function JudgePortal({
              <img src={activeJudge.avatarUrl} alt="Avatar" className="w-12 h-12 rounded-2xl border-2 border-red-600 shadow-sm object-cover" />
              <div className="flex flex-col">
                <span className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={activeJudge.name}>{activeJudge.name}</span>
-               <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">{activeJudge.rank}</span>
+               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal del Juez</span>
              </div>
           </div>
           <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">

@@ -1,55 +1,73 @@
 -- ============================================================
 -- SUPABASE SQL SCHEMA — FMK Sistema de Grados
--- 
--- SOLO se usa Supabase para autenticación y roles de usuario.
--- El resto de los datos (aspirantes, convocatorias, jueces, etc.)
--- se guardan en localStorage del navegador.
+-- Base de datos relacional para Convocatorias, Tribunales y Aspirantes
 -- ============================================================
 
--- ============================================================
--- TABLA: user_roles
--- Mapea correo electrónico → rol del sistema
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.user_roles (
+-- 1️⃣ Borrar tablas antiguas si existen (para limpieza total)
+DROP TABLE IF EXISTS public.aspirantes CASCADE;
+DROP TABLE IF EXISTS public.tribunales CASCADE;
+DROP TABLE IF EXISTS public.convocatorias CASCADE;
+DROP TABLE IF EXISTS public.user_roles CASCADE;
+
+-- 2️⃣ Crear tablas principales (Relacionales)
+
+-- Tabla de Convocatorias
+CREATE TABLE public.convocatorias (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT NOT NULL UNIQUE,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'director', 'juez', 'arbitro', 'medico', 'deportista', 'aspirante')),
-    profile_id TEXT,
+    titulo TEXT NOT NULL,
+    fecha DATE NOT NULL,
+    sede TEXT NOT NULL,
+    grades_admitidos JSONB NOT NULL DEFAULT '[]'::jsonb,
+    plazo_ordinario DATE NOT NULL,
+    estado TEXT CHECK (estado IN ('Borrador', 'Abierta', 'Cerrada', 'Finalizada')),
+    cupo_maximo INTEGER NOT NULL DEFAULT 50,
+    inscritos INTEGER NOT NULL DEFAULT 0,
+    observaciones TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Habilitar RLS
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+-- Tabla de Tribunales
+CREATE TABLE public.tribunales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    convocatoria_id UUID REFERENCES public.convocatorias(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    is_main BOOLEAN DEFAULT false,
+    fecha DATE,
+    data JSONB DEFAULT '{}'::jsonb, -- Guarda los arrays de judges y arbitros
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
--- Políticas de acceso
-DROP POLICY IF EXISTS "Leer rol propio" ON public.user_roles;
-CREATE POLICY "Leer rol propio" ON public.user_roles
-    FOR SELECT USING (true);
+-- Tabla de Aspirantes
+CREATE TABLE public.aspirantes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    convocatoria_id UUID REFERENCES public.convocatorias(id) ON DELETE SET NULL,
+    assigned_tribunal_id UUID REFERENCES public.tribunales(id) ON DELETE SET NULL,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Borrador',
+    data JSONB DEFAULT '{}'::jsonb, -- Guarda documentos, evaluaciones, pagos, etc.
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
-DROP POLICY IF EXISTS "Admin puede gestionar roles" ON public.user_roles;
-CREATE POLICY "Admin puede gestionar roles" ON public.user_roles
-    FOR ALL USING (true) WITH CHECK (true);
+-- Tabla de Roles del Personal (Admin, Juez, Director, Médico)
+CREATE TABLE public.user_roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL CHECK (role IN ('admin','director','juez','arbitro','medico')),
+    data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
--- ============================================================
--- ROLES DE TODOS LOS USUARIOS REGISTRADOS
--- ============================================================
+-- 3️⃣ Desactivar Row-Level Security (RLS) para desarrollo
+ALTER TABLE public.convocatorias DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tribunales DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.aspirantes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles DISABLE ROW LEVEL SECURITY;
 
-INSERT INTO public.user_roles (email, role) VALUES
-    ('lionchan07@gmail.com',         'director')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
-
-INSERT INTO public.user_roles (email, role) VALUES
-    ('elviaheredia53@gmail.com',     'juez')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
-
-INSERT INTO public.user_roles (email, role) VALUES
-    ('elvia.leon.heredia@gmail.com', 'aspirante')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
-
-INSERT INTO public.user_roles (email, role) VALUES
-    ('elvialeonsh@gmail.com',        'admin')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
-
-INSERT INTO public.user_roles (email, role) VALUES
-    ('paginasusar@gmail.com',        'medico')
-ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role;
+-- 4️⃣ Roles iniciales de respaldo por defecto (Solo Personal Autorizado)
+INSERT INTO public.user_roles (email, role, data) VALUES
+    ('lionchan07@gmail.com',         'director', '{"name": "Director General"}'::jsonb),
+    ('elviaheredia53@gmail.com',     'juez',     '{"name": "Juez Principal"}'::jsonb),
+    ('elvialeonsh@gmail.com',        'admin',    '{"name": "Administrador"}'::jsonb),
+    ('paginasusar@gmail.com',        'medico',   '{"name": "Médico"}'::jsonb)
+ON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, data = EXCLUDED.data;

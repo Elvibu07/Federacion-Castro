@@ -4,11 +4,12 @@ import App from './App.tsx';
 import './index.css';
 import { UIProvider } from './contexts/UIContext';
 
-// Force clear all cookies on localhost to prevent 431 Request Header Fields Too Large error
-if (typeof window !== 'undefined') {
-  // Clear cookies
+// Force clear ALL cookies on localhost to prevent 431 Request Header Fields Too Large error
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
   document.cookie.split(";").forEach((c) => {
-    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    const cookie = c.replace(/^ +/, "").split("=")[0];
+    document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/supabase-proxy`;
   });
   
   // If the URL contains ?reset=1, completely nuke local storage

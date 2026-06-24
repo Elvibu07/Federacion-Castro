@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Aspirante, Convocatoria } from '../types';
 import { useUI } from '../contexts/UIContext';
 import ConfiguracionPerfilFederativo from './ConfiguracionPerfilFederativo';
+import { supabase } from '../lib/supabase';
 
 interface MedicoPortalProps {
   aspirantes: Aspirante[];
@@ -39,6 +40,30 @@ function BadgeMedico({ estado }: { estado?: 'pendiente' | 'apto' | 'no_apto' }) 
 export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspirante, onLogout }: MedicoPortalProps) {
   const { showToast } = useUI();
   const [activeTab, setActiveTab] = useState<MedicoTab>('evaluacion');
+  const [medicoName, setMedicoName] = useState<string>('Bob Toronja');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        if (user.user_metadata?.full_name) {
+          setMedicoName(user.user_metadata.full_name);
+        } else if (user.email === 'paginasusar@gmail.com') {
+          setMedicoName('Bob Toronja');
+        }
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        if (session.user.user_metadata?.full_name) {
+          setMedicoName(session.user.user_metadata.full_name);
+        } else if (session.user.email === 'paginasusar@gmail.com') {
+          setMedicoName('Bob Toronja');
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [search, setSearch] = useState('');
   const [filterConv, setFilterConv] = useState<string>('all');
   const [selectedAsp, setSelectedAsp] = useState<Aspirante | null>(null);
@@ -105,8 +130,8 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
             <span className="material-symbols-outlined text-white text-2xl">medical_services</span>
           </div>
           <div>
-            <h1 className="font-black text-xl tracking-tight text-stone-900 dark:text-white leading-none">Portal Médico</h1>
-            <p className="text-xs text-stone-400 font-mono uppercase tracking-widest mt-0.5">Federación Madrileña de Karate</p>
+            <h1 className="font-black text-xl tracking-tight text-stone-900 dark:text-white leading-none truncate max-w-[160px]" title={medicoName}>{medicoName}</h1>
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Portal Médico</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -209,11 +234,13 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
                                   </p>
                                 )}
                                 {a.aptoMedico?.fecha && <p className="text-xs text-stone-400 mb-2">Emitido: {a.aptoMedico.fecha}</p>}
-                                <button onClick={() => { setSelectedAsp(a); setNota(a.aptoMedico?.nota || ''); }}
-                                  className="text-sm font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 transition-colors">
-                                  <span className="material-symbols-outlined text-base">edit</span>
-                                  {a.aptoMedico?.estado ? 'Modificar dictamen' : 'Emitir dictamen médico'}
-                                </button>
+                                {!a.aptoMedico?.estado && (
+                                  <button onClick={() => { setSelectedAsp(a); setNota(a.aptoMedico?.nota || ''); }}
+                                    className="text-sm font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 transition-colors">
+                                    <span className="material-symbols-outlined text-base">edit</span>
+                                    Emitir dictamen médico
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -433,13 +460,15 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
                                   <p className="text-sm text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
                                     <span className="font-bold">Certificado Adjunto:</span>
                                     <span className="material-symbols-outlined text-[16px] text-red-700">description</span>
-                                    <a href="#" onClick={(e) => { e.preventDefault(); showToast(`Simulando visualización de: ${d.certificadoAdjunto}`, 'info'); }} className="text-blue-600 hover:underline">{d.certificadoAdjunto}</a>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); window.open(d.certificadoAdjunto, '_blank'); }} className="text-blue-600 hover:underline" title="Ver Certificado Original">
+                                      Ver Documento
+                                    </a>
                                   </p>
                                 )}
                                 {d.parteExamenExenta && <p className="text-sm text-stone-600 dark:text-stone-400"><span className="font-bold">Exento de:</span> {d.parteExamenExenta}</p>}
                                 {d.fechaSolicitud && <p className="text-xs text-stone-400 font-mono">Solicitado: {d.fechaSolicitud}</p>}
                               </div>
-                              {d.aprobada === undefined ? (
+                              {d.aprobada === undefined && (
                                 <div className="flex gap-3">
                                   <button onClick={() => setSelectedDispensa(a)} className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">
                                     <span className="material-symbols-outlined text-base">check_circle</span> Aprobar
@@ -448,10 +477,6 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
                                     <span className="material-symbols-outlined text-base">cancel</span> Rechazar
                                   </button>
                                 </div>
-                              ) : (
-                                <button onClick={() => setSelectedDispensa(a)} className="text-sm font-bold text-stone-400 hover:text-stone-600 flex items-center gap-1.5">
-                                  <span className="material-symbols-outlined text-base">edit</span> Modificar resolución
-                                </button>
                               )}
                             </div>
                           );
@@ -503,7 +528,7 @@ export default function MedicoPortal({ aspirantes, convocatorias, onUpdateAspira
         {activeTab === 'perfil' && (
           <ConfiguracionPerfilFederativo 
             roleName="Médico Federativo" 
-            defaultName="Dr. Médico Oficial" 
+            defaultName="Bob Toronja" 
             defaultEmail="paginasusar@gmail.com"
           />
         )}

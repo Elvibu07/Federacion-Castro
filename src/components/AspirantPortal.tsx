@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Aspirante, Judge, Tribunal, Convocatoria, GradoConfig, ViaExamen, Documento, EstadoDocumento } from '../types';
 import { GRADOS_CONFIG, ESTILOS_RECONOCIDOS } from '../data';
 import { useUI } from '../contexts/UIContext';
+import { supabase } from '../lib/supabase';
 
 interface AspirantPortalProps {
   aspirante: Aspirante;
@@ -67,6 +68,7 @@ export default function AspirantPortal({
   const [uploadingDocType, setUploadingDocType] = useState<string>('');
   const [uploadingDocEtiqueta, setUploadingDocEtiqueta] = useState<string>('');
   const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadDocTypeSelected, setUploadDocTypeSelected] = useState('');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success'>('idle');
 
@@ -119,6 +121,7 @@ export default function AspirantPortal({
   // Dispensa médica
   const [dispensaMotivo, setDispensaMotivo] = useState('');
   const [dispensaFile, setDispensaFile] = useState('');
+  const [dispensaFileObj, setDispensaFileObj] = useState<File | null>(null);
 
   const assignedTribunal = allTribunals.find(t => t.id === aspirante.assignedTribunalId);
   const convAbierta = convocatorias.filter(c => c.estado === 'Abierta');
@@ -126,8 +129,8 @@ export default function AspirantPortal({
 
   // Gradoconfig del grado solicitado
   const gradoConfig: GradoConfig | undefined = GRADOS_CONFIG.find(g =>
-    aspirante.requestedBelt.toLowerCase().includes(g.nombre.toLowerCase()) ||
-    aspirante.requestedBelt.toLowerCase().includes(g.etiquetaCorta.toLowerCase())
+    aspirante.requestedBelt?.toLowerCase().includes(g.nombre.toLowerCase()) ||
+    aspirante.requestedBelt?.toLowerCase().includes(g.etiquetaCorta.toLowerCase())
   ) || GRADOS_CONFIG[1]; // fallback 1º Dan
 
   // Validaciones automáticas (RF-18, RF-19, RF-20)
@@ -177,9 +180,9 @@ export default function AspirantPortal({
   };
   const cuota = calcularCuota();
 
-  const handleFileUploadConfirm = () => {
-    if (!uploadFileName.trim()) {
-      showToast('Debes ingresar un nombre de archivo.', 'error');
+  const handleFileUploadConfirm = async () => {
+    if (!uploadFileName.trim() || !uploadFile) {
+      showToast('Debes ingresar un nombre y seleccionar un archivo.', 'error');
       return;
     }
     
@@ -192,9 +195,30 @@ export default function AspirantPortal({
       tipo = uploadDocTypeSelected;
     }
 
+    setUploadStatus('uploading');
+
+    // 1. Upload to Supabase
+    const fileExt = uploadFile.name.split('.').pop();
+    const filePath = `${aspirante.id}/${tipo}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('fmk_archivos')
+      .upload(filePath, uploadFile);
+
+    if (uploadError) {
+      console.error('Error uploading:', uploadError);
+      showToast('Error al subir el archivo a Supabase.', 'error');
+      setUploadStatus('idle');
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('fmk_archivos')
+      .getPublicUrl(filePath);
+
+    // 2. Update Aspirante
     const updated = { ...aspirante };
 
-    // Actualizar documentos extendidos
     if (!updated.documentos) {
       updated.documentos = [];
     }
@@ -204,8 +228,9 @@ export default function AspirantPortal({
       updated.documentos[docIndex] = {
         ...updated.documentos[docIndex],
         nombre: uploadFileName,
+        url: publicUrl,
         estado: 'cargado' as EstadoDocumento,
-        fechaCarga: new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
+        fechaCarga: new Date().toISOString().split('T')[0]
       };
     } else {
       updated.documentos.push({
@@ -213,41 +238,34 @@ export default function AspirantPortal({
         etiqueta: tipo.replace('_', ' ').toUpperCase(),
         estado: 'cargado' as EstadoDocumento,
         nombre: uploadFileName,
+        url: publicUrl,
         fechaCarga: new Date().toISOString().split('T')[0]
       });
     }
 
-    // Actualizar legacy también
     if (tipo === 'dni' && updated.documents) updated.documents.dni = { name: uploadFileName, uploaded: true, fileSize: '1.4 MB' };
     if (tipo === 'foto' && updated.documents) updated.documents.photo = { name: uploadFileName, uploaded: true, fileSize: '700 KB' };
     if (tipo === 'licencia' && updated.documents) updated.documents.license = { name: uploadFileName, uploaded: true, fileSize: '2.2 MB' };
 
-    // Limpiar subsanación si se actualizó documento
     if (updated.status === 'Subsanación') {
       updated.status = 'Pendiente';
       updated.correctionReason = undefined;
     }
 
-    // Verificar si todos los documentos requeridos están cargados
     const allLoaded = updated.documentos?.every(d => d.estado !== 'no_cargado') ?? false;
     if (allLoaded && updated.progressStep < 3 && updated.paymentStatus === 'Unpaid') {
       updated.progressStep = 3;
     }
 
-    setUploadStatus('uploading');
+    onUpdateAspirante(updated);
+    setUploadStatus('success');
     
-    // Simular un pequeño delay de carga
     setTimeout(() => {
-      onUpdateAspirante(updated);
-      setUploadStatus('success');
-      
-      // Cerrar el modal después de mostrar el éxito
-      setTimeout(() => {
-        setUploadModalOpen(false);
-        setUploadStatus('idle');
-        setUploadFileName('');
-      }, 1500);
-    }, 800);
+      setUploadModalOpen(false);
+      setUploadStatus('idle');
+      setUploadFileName('');
+      setUploadFile(null);
+    }, 1500);
   };
 
   const handleFileDelete = (tipo: string) => {
@@ -309,25 +327,44 @@ export default function AspirantPortal({
     showToast(`Vía "${selectedVia}" guardada en tu solicitud.`, 'success');
   };
 
-  const handleSolicitarDispensa = () => {
+  const handleSolicitarDispensa = async () => {
     if (!dispensaMotivo.trim()) { showToast('Describe el motivo médico.', 'error'); return; }
-    if (!dispensaFile) { showToast('Adjunta el certificado médico.', 'error'); return; }
+    if (!dispensaFileObj) { showToast('Adjunta el certificado médico.', 'error'); return; }
 
     showConfirm(
       'Solicitar Dispensa Médica',
       `¿Confirmar envío de solicitud de dispensa médica a la Federación? Motivo: ${dispensaMotivo}`,
-      () => {
+      async () => {
+        // Upload to Supabase
+        const fileExt = dispensaFileObj.name.split('.').pop();
+        const filePath = `${aspirante.id}/dispensa-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('fmk_archivos')
+          .upload(filePath, dispensaFileObj);
+
+        if (uploadError) {
+          console.error('Error uploading dispensa:', uploadError);
+          showToast('Error al subir el certificado a Supabase.', 'error');
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('fmk_archivos')
+          .getPublicUrl(filePath);
+
         onUpdateAspirante({
           ...aspirante,
           dispensaMedica: {
             solicitada: true,
             motivoDispensa: dispensaMotivo,
-            certificadoAdjunto: dispensaFile,
+            certificadoAdjunto: publicUrl,
             fechaSolicitud: new Date().toISOString().split('T')[0],
           }
         });
         setShowDispensaModal(false);
         setDispensaFile('');
+        setDispensaFileObj(null);
         setDispensaMotivo('');
         showAlert('Dispensa Solicitada', 'Solicitud de dispensa médica y certificado enviados a la Federación.');
       },
@@ -363,8 +400,10 @@ export default function AspirantPortal({
               <span className="text-white font-black tracking-tighter text-base">FMK</span>
             </div>
             <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight">Portal Aspirante</h2>
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Federación Madrileña</p>
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={aspirante.name}>
+                {aspirante.name}
+              </h2>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal del Aspirante</p>
             </div>
           </div>
           <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
@@ -444,7 +483,10 @@ export default function AspirantPortal({
              <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center">
                 <span className="text-white font-black tracking-tighter text-xs">FMK</span>
              </div>
-             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm">Portal Aspirante</span>
+             <div>
+               <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={aspirante.name}>{aspirante.name}</span>
+               <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal del Aspirante</span>
+             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
@@ -724,7 +766,7 @@ export default function AspirantPortal({
                   const estadosRF08 = [
                     { id: 'Borrador', label: 'Borrador', desc: 'Iniciando recopilación de requisitos y datos.' },
                     { id: 'Enviada', label: 'Enviada', desc: 'Solicitud enviada a la F.M.K. y D.A.' },
-                    { id: 'Pendiente de revisión', label: 'Pendiente de revisión', desc: 'En cola para ser revisada por un administrativo federativo.' },
+                    { id: 'Enviada', label: 'En revisión (Pendiente)', desc: 'En cola para ser revisada por un administrativo federativo.' },
                     { id: 'Subsanación', label: 'Pendiente de subsanación', desc: 'Se han detectado errores o faltan documentos. Requiere tu acción.' },
                     { id: 'Validada', label: 'Validada', desc: 'La documentación es correcta. Pendiente de pago de tasas.' },
                     { id: 'Admitida', label: 'Admitida', desc: 'Expediente completo y pago recibido. Estás en la lista definitiva del examen.' },
@@ -732,7 +774,7 @@ export default function AspirantPortal({
                     { id: 'Cerrada', label: 'Cerrada', desc: 'Acta oficial publicada con el resultado final.' }
                   ];
 
-                  const hierarchy = ['Borrador', 'Enviada', 'Pendiente de revisión', 'Subsanación', 'Validada', 'Admitida', 'Evaluada', 'Cerrada'];
+                  const hierarchy = ['Borrador', 'Enviada', 'Pendiente', 'Subsanación', 'Validada', 'Admitida', 'En evaluación', 'Acta emitida', 'Cerrada'];
                   
                   let userStatusIndex = hierarchy.indexOf(aspirante.status);
                   if (userStatusIndex === -1) {
@@ -875,7 +917,7 @@ export default function AspirantPortal({
                   'Enviar Solicitud',
                   '¿Estás seguro de que deseas enviar tu solicitud a revisión administrativa? Una vez enviada, no podrás modificarla hasta que la Federación te lo solicite.',
                   () => {
-                    onUpdateAspirante({ ...aspirante, status: 'Pendiente de revisión' as any });
+                    onUpdateAspirante({ ...aspirante, status: 'Enviada' });
                     showAlert('Solicitud Enviada', 'Tu solicitud ha sido enviada con éxito a revisión administrativa. Te notificaremos por correo electrónico.');
                   },
                   'Enviar a Revisión'
@@ -1044,7 +1086,7 @@ export default function AspirantPortal({
                 const isSelected = aspirante.convocatoriaId === conv.id;
                 const diasRestantes = Math.ceil((new Date(conv.plazoOrdinario).getTime() - Date.now()) / 86400000);
                 const gradoAdmitido = conv.gradesAdmitidos.some(g =>
-                  aspirante.requestedBelt.toLowerCase().includes(g.toLowerCase())
+                  aspirante.requestedBelt?.toLowerCase().includes(g.toLowerCase())
                 );
 
                 return (
@@ -1316,7 +1358,7 @@ export default function AspirantPortal({
 
                   const allDocsToRender: Documento[] = [...baseExpected, ...extraDocs].map(base => {
                     const found = aspirante.documentos?.find(d => d.tipo === base.tipo);
-                    return (found || { tipo: base.tipo as any, etiqueta: base.etiqueta || '', estado: 'no_cargado' as EstadoDocumento, nombre: '' }) as Documento;
+                    return (found || { tipo: base.tipo as any, etiqueta: base.etiqueta || '', estado: 'no_cargado' as EstadoDocumento, nombre: '', url: '' }) as Documento;
                   });
 
                   return allDocsToRender.map(doc => {
@@ -1491,6 +1533,60 @@ export default function AspirantPortal({
               <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Dispensas médicas, convalidaciones y méritos deportivos.</p>
             </div>
 
+            {/* Dictamen Médico */}
+            <div className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl shadow-sm p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="font-bold text-base flex items-center gap-2">
+                    <span className="material-symbols-outlined text-emerald-600 text-xl">health_and_safety</span>
+                    Dictamen Médico Oficial
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                    Evaluación de aptitud física emitida por el médico de la Federación.
+                  </p>
+                </div>
+              </div>
+
+              {aspirante.aptoMedico ? (
+                <div className={`p-4 rounded-lg border ${
+                  aspirante.aptoMedico.estado === 'apto' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-700/30' :
+                  aspirante.aptoMedico.estado === 'no_apto' ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-700/30' :
+                  'bg-stone-50 border-stone-200 dark:bg-white/5 dark:border-white/10'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`material-symbols-outlined filled text-xl ${
+                      aspirante.aptoMedico.estado === 'apto' ? 'text-emerald-600' :
+                      aspirante.aptoMedico.estado === 'no_apto' ? 'text-red-600' : 'text-stone-500'
+                    }`}>
+                      {aspirante.aptoMedico.estado === 'apto' ? 'verified' : aspirante.aptoMedico.estado === 'no_apto' ? 'cancel' : 'pending'}
+                    </span>
+                    <p className="font-black text-lg">
+                      {aspirante.aptoMedico.estado === 'apto' && 'APTO PARA EXAMEN'}
+                      {aspirante.aptoMedico.estado === 'no_apto' && 'NO APTO'}
+                      {aspirante.aptoMedico.estado === 'pendiente' && 'PENDIENTE DE EVALUACIÓN'}
+                    </p>
+                  </div>
+                  {aspirante.aptoMedico.nota && (
+                    <div className="mt-3 p-3 bg-white/60 dark:bg-black/20 rounded border border-black/5 dark:border-white/5">
+                      <p className="text-xs font-bold text-stone-500 uppercase mb-1">Observaciones del Médico:</p>
+                      <p className="text-sm italic text-stone-700 dark:text-stone-300">{aspirante.aptoMedico.nota}</p>
+                    </div>
+                  )}
+                  {aspirante.aptoMedico.fecha && (
+                    <p className="text-xs text-stone-500 mt-3 font-mono">Fecha del dictamen: {aspirante.aptoMedico.fecha}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 rounded-lg border bg-stone-50 border-stone-200 dark:bg-white/5 dark:border-white/10 flex items-center gap-3 text-stone-500">
+                  <span className="material-symbols-outlined text-2xl">pending_actions</span>
+                  <div>
+                    <p className="font-bold">Pendiente de Revisión Médica</p>
+                    <p className="text-xs mt-0.5">El departamento médico aún no ha emitido tu dictamen.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Dispensa médica */}
             <div className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl shadow-sm p-6">
               <div className="flex items-start justify-between gap-4 mb-4">
@@ -1526,6 +1622,16 @@ export default function AspirantPortal({
                   </p>
                   <p className="text-xs mt-1 text-stone-500 dark:text-stone-400">Motivo: {aspirante.dispensaMedica.motivoDispensa}</p>
                   <p className="text-xs text-stone-500 dark:text-stone-400">Fecha solicitud: {aspirante.dispensaMedica.fechaSolicitud}</p>
+                  
+                  {aspirante.dispensaMedica?.dictamenMedico && (
+                    <div className="mt-3 p-3 bg-stone-100/50 dark:bg-[#111] rounded-lg border border-stone-200 dark:border-white/5">
+                      <p className="text-[10px] font-bold text-secondary-custom uppercase mb-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">stethoscope</span> Resolución Médica
+                      </p>
+                      <p className="text-xs text-stone-700 dark:text-stone-300 font-medium">{aspirante.dispensaMedica.dictamenMedico}</p>
+                    </div>
+                  )}
+
                   <p className="text-xs mt-2 font-medium">
                     ⚠️ La dispensa no se considera válida hasta que la Federación emita respuesta formal (RF-56).
                   </p>
@@ -1766,6 +1872,7 @@ export default function AspirantPortal({
                 accept=".pdf,.jpg,.png"
                 onChange={e => {
                   if (e.target.files && e.target.files[0]) {
+                    setDispensaFileObj(e.target.files[0]);
                     setDispensaFile(e.target.files[0].name);
                   }
                 }}
@@ -1867,6 +1974,7 @@ export default function AspirantPortal({
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={e => {
                         if (e.target.files && e.target.files[0]) {
+                          setUploadFile(e.target.files[0]);
                           setUploadFileName(e.target.files[0].name);
                         }
                       }}

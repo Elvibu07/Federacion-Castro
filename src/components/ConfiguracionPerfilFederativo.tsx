@@ -18,7 +18,7 @@ export default function ConfiguracionPerfilFederativo({ roleName, defaultName, d
   const [password, setPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [pendingAvatarBase64, setPendingAvatarBase64] = useState<string | null>(null);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -42,8 +42,22 @@ export default function ConfiguracionPerfilFederativo({ roleName, defaultName, d
         updateData.full_name = name.trim();
       }
       
-      if (pendingAvatarBase64) {
-        updateData.avatar_url = pendingAvatarBase64;
+      if (pendingAvatarFile) {
+        const fileExt = pendingAvatarFile.name.split('.').pop();
+        const { data: { user } } = await supabase.auth.getUser();
+        const filePath = `avatars/${user?.id || 'unknown'}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('fmk_archivos')
+          .upload(filePath, pendingAvatarFile, { upsert: true });
+          
+        if (uploadError) throw new Error('Error al subir la imagen: ' + uploadError.message);
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('fmk_archivos')
+          .getPublicUrl(filePath);
+          
+        updateData.avatar_url = publicUrl;
       }
       
       if (Object.keys(updateData).length > 0) {
@@ -58,7 +72,7 @@ export default function ConfiguracionPerfilFederativo({ roleName, defaultName, d
           }
         }
         
-        setPendingAvatarBase64(null);
+        setPendingAvatarFile(null);
       }
 
       if (password.trim()) {
@@ -81,13 +95,8 @@ export default function ConfiguracionPerfilFederativo({ roleName, defaultName, d
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        setPendingAvatarBase64(base64String);
-      };
-      reader.readAsDataURL(file);
+      setPendingAvatarFile(file);
+      setAvatarUrl(URL.createObjectURL(file));
     }
   };
 
@@ -201,7 +210,7 @@ export default function ConfiguracionPerfilFederativo({ roleName, defaultName, d
         <div className="mt-10 flex justify-end">
           <button 
             onClick={handleSave}
-            disabled={isSaving || (!password.trim() && name.trim() === originalName.trim() && !pendingAvatarBase64)}
+            disabled={isSaving || (!password.trim() && name.trim() === originalName.trim() && !pendingAvatarFile)}
             className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-700/20 active:scale-[0.99]"
           >
             {isSaving ? (

@@ -121,3 +121,8 @@ body {
   background-color: var(--color-surface-custom);
   color: var(--color-on-surface);
 }
+
+html.dark select option {
+  background-color: #191c1d;
+  color: #e1e3e4;
+}

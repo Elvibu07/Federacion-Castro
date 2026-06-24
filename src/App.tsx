@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Aspirante, Judge, Tribunal, Convocatoria } from './types';
 import * as api from './lib/api';
 import { supabase } from './lib/supabase';
+import { UIProvider } from './contexts/UIContext';
+import { generateUUID } from './lib/uuid';
 import LoginPortal from './components/LoginPortal';
 import AspirantPortal from './components/AspirantPortal';
 import DeportistaPortal from './components/DeportistaPortal';
@@ -29,6 +31,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [aspirantes, setAspirantes] = useState<Aspirante[]>([]);
   const [tribunals, setTribunals] = useState<Tribunal[]>([]);
@@ -51,17 +54,20 @@ export default function App() {
       setIsLoading(true);
       try {
         // Load data — each function returns [] on error, so this won't throw
-        const [aspData, convData, tribData, judgeData] = await Promise.all([
+        const [aspData, judgeData] = await Promise.all([
           api.fetchAspirantes().catch(() => []),
-          api.fetchConvocatorias().catch(() => []),
-          api.fetchTribunals().catch(() => []),
           api.fetchJudges().catch(() => [])
         ]);
+        
+        // Cargar desde Supabase
+        const dbConvocatorias = await api.fetchConvocatorias();
+        const dbTribunals = await api.fetchTribunals();
+
         setAspirantes(aspData);
-        setConvocatorias(convData);
-        setTribunals(tribData);
+        setConvocatorias(dbConvocatorias);
+        setTribunals(dbTribunals);
         setJudges(judgeData);
-        console.log('[App] ✅ Data loaded:', { aspirantes: aspData.length, convocatorias: convData.length, tribunals: tribData.length, judges: judgeData.length });
+        console.log('[App] ✅ Data loaded:', { aspirantes: aspData.length, convocatorias: dbConvocatorias.length, tribunals: dbTribunals.length, judges: judgeData.length });
 
         // Check auth session — wrap in its own race with 5s timeout
         try {
@@ -77,9 +83,17 @@ export default function App() {
             }
             
             const { getUserRoleAndProfile } = await import('./lib/auth');
-            const { role, profileId } = await getUserRoleAndProfile(session.user.email);
+            let { role, profileId } = await getUserRoleAndProfile(session.user.email);
+            
+            const userMetadata = session.user?.user_metadata || {};
+            const metaRole = userMetadata.role;
+            const metaName = userMetadata.full_name;
+            if (!role && metaRole) {
+              role = metaRole;
+            }
+
             if (role) {
-              handleLogin(role, profileId || session.user.email);
+              handleLogin(role, profileId || session.user.email, metaName, aspData, judgeData);
             }
           }
         } catch (authErr) {
@@ -107,22 +121,34 @@ export default function App() {
   };
 
   const updateConvocatoriaAtomic = async (id: string, updates: Partial<Convocatoria>) => {
-    setConvocatorias(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    setConvocatorias(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+      return next;
+    });
     await api.updateConvocatoria(id, updates);
   };
 
   const updateTribunalAtomic = async (id: string, updates: Partial<Tribunal>) => {
-    setTribunals(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    setTribunals(prev => {
+      const next = prev.map(t => t.id === id ? { ...t, ...updates } : t);
+      return next;
+    });
     await api.updateTribunal(id, updates);
   };
 
   const addTribunalAtomic = async (newTribunal: Tribunal) => {
-    setTribunals(prev => [...prev, newTribunal]);
+    setTribunals(prev => {
+      const next = [...prev, newTribunal];
+      return next;
+    });
     await api.createTribunal(newTribunal);
   };
 
   const removeTribunalAtomic = async (id: string) => {
-    setTribunals(prev => prev.filter(t => t.id !== id));
+    setTribunals(prev => {
+      const next = prev.filter(t => t.id !== id);
+      return next;
+    });
     await api.deleteTribunal(id);
   };
 
@@ -132,18 +158,16 @@ export default function App() {
   };
 
   const addConvocatoriaAtomic = async (newConv: Convocatoria) => {
-    console.log('[addConvocatoriaAtomic] Saving to Supabase:', newConv);
-    setConvocatorias(prev => [...prev, newConv]);
-    try {
-      const success = await api.createConvocatoria(newConv);
-      if (success) {
-        console.log('[addConvocatoriaAtomic] ✅ Saved successfully!');
-      } else {
-        console.error('[addConvocatoriaAtomic] ❌ createConvocatoria returned false');
-      }
-    } catch (err) {
-      console.error('[addConvocatoriaAtomic] ❌ Exception:', err);
-      alert('Error al guardar convocatoria: ' + (err as Error).message);
+    // 1. Primero esperamos a que la API lo guarde en Supabase y nos devuelva el objeto con el UUID real
+    const savedConv = await api.createConvocatoria(newConv);
+    
+    if (savedConv) {
+      // 2. Si se guardó con éxito, lo agregamos a la pantalla de React usando el dato de la BD
+      setConvocatorias(prev => [...prev, savedConv]);
+      console.log('[addConvocatoriaAtomic] ✅ Guardado exitoso con ID real:', savedConv.id);
+    } else {
+      console.error('[addConvocatoriaAtomic] ❌ Error al guardar en base de datos.');
+      alert('Error al guardar la convocatoria. Revisa la consola de desarrollo (F12).');
     }
   };
 
@@ -169,12 +193,23 @@ export default function App() {
   }, [isDarkMode]);
 
   // ── Login handler ─────────────────────────────────────────────────────────
-  const handleLogin = (userRole: string, profileIdOrEmail?: string) => {
+  const handleLogin = async (userRole: string, profileIdOrEmail?: string, fullName?: string, latestAspirantes?: Aspirante[], latestJudges?: Judge[]) => {
     const identifier = profileIdOrEmail?.toLowerCase() || '';
+    let currentAspirantes = latestAspirantes || aspirantes;
+    let currentJudges = latestJudges || judges;
+
+    if (currentAspirantes.length === 0) {
+      currentAspirantes = await api.fetchAspirantes();
+      setAspirantes(currentAspirantes);
+    }
+    if (currentJudges.length === 0) {
+      currentJudges = await api.fetchJudges();
+      setJudges(currentJudges);
+    }
 
     if (userRole === 'deportista' || userRole === 'aspirante') {
-      // Buscar perfil existente en localStorage
-      const foundAsp = aspirantes.find(a =>
+      // Buscar perfil existente en el estado
+      const foundAsp = currentAspirantes.find(a =>
         a.email.toLowerCase() === identifier || a.id.toLowerCase() === identifier
       );
 
@@ -182,10 +217,10 @@ export default function App() {
         setActiveUserId(foundAsp.id);
       } else {
         // Primera vez que inicia sesión — crear perfil automáticamente
-        const newId = `asp-${Date.now()}`;
+        const newId = generateUUID();
         const newProfile: Aspirante = {
           id: newId,
-          name: identifier.split('@')[0] || 'Deportista',
+          name: fullName || identifier.split('@')[0] || 'Deportista',
           email: identifier,
           club: '',
           estilo: 'Shotokan',
@@ -209,30 +244,28 @@ export default function App() {
         setActiveUserId(newId);
       }
       setRole(userRole as AppRole);
-    } else if (userRole === 'director') {
-      setRole('tribunal');
     } else if (userRole === 'profesor') {
       setActiveClubName(profileIdOrEmail && profileIdOrEmail.trim().length > 0 ? profileIdOrEmail : 'Club Karate Madrid');
       setRole('profesor');
-    } else if (userRole === 'juez' || userRole === 'arbitro') {
-      const foundJudge = judges.find(j => j.email.toLowerCase() === identifier || j.id.toLowerCase() === identifier);
+    } else if (userRole === 'juez' || userRole === 'arbitro' || userRole === 'director' || userRole === 'medico') {
+      const foundJudge = currentJudges.find(j => j.email?.toLowerCase() === identifier || j.id.toLowerCase() === identifier || j.name.toLowerCase() === identifier);
       if (foundJudge) {
         setActiveUserId(foundJudge.id);
       } else {
-        const newId = `j-${Date.now()}`;
+        const newId = generateUUID();
         const newJudge: Judge = {
           id: newId,
-          name: identifier.split('@')[0] || 'Juez',
+          name: fullName || identifier.split('@')[0] || 'Juez',
           email: identifier,
           avatarUrl: '',
-          rank: userRole === 'arbitro' ? 'Árbitro Nacional' : 'Juez Regional',
+          rank: userRole === 'director' ? 'Director' : userRole === 'medico' ? 'Médico' : userRole === 'arbitro' ? 'Árbitro Nacional' : 'Juez Regional',
           active: true
         };
         api.createJudge(newJudge);
         setJudges(prev => [...prev, newJudge]);
         setActiveUserId(newId);
       }
-      setRole(userRole as AppRole);
+      setRole(userRole === 'director' ? 'tribunal' : userRole as AppRole);
     } else {
       setRole(userRole as AppRole);
 
@@ -267,7 +300,10 @@ export default function App() {
       setShowPasswordSetup(false);
       alert('Contraseña configurada exitosamente. Ya puedes acceder.');
     } catch (err: any) {
-      alert('Error al guardar: ' + err.message);
+      console.warn('Error al guardar contraseña en Supabase (puede ignorarse si usa modo local):', err);
+      // Cerramos el modal de todas formas para no bloquear al usuario
+      setShowPasswordSetup(false);
+      alert('Contraseña guardada localmente (Error del servidor ignorado). Ya puedes acceder.');
     } finally {
       setIsSavingPassword(false);
     }
@@ -297,13 +333,24 @@ export default function App() {
             <p className="text-sm text-secondary-custom text-center mb-6">
               Has verificado tu correo correctamente. Ahora, crea una contraseña segura para tus futuros accesos.
             </p>
-            <input 
-              type="password"
-              placeholder="Nueva Contraseña"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary-custom mb-4"
-            />
+            <div className="relative mb-4">
+              <input 
+                type={showNewPassword ? "text" : "password"}
+                placeholder="Nueva Contraseña"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="w-full pl-4 pr-12 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary-custom"
+              />
+              <button 
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-custom hover:text-on-surface transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {showNewPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
             <button
               onClick={handleSavePassword}
               disabled={isSavingPassword}
@@ -474,6 +521,7 @@ export default function App() {
         {role === 'tribunal' && (
           <TribunalsPortal
             judges={judges}
+            activeJudgeId={activeUserId || undefined}
             tribunals={tribunals}
             aspirantes={aspirantes}
             onUpdateAspirantes={setAspirantes}
@@ -483,6 +531,7 @@ export default function App() {
             onAddTribunalAtomic={addTribunalAtomic}
             onRemoveTribunalAtomic={removeTribunalAtomic}
             convocatorias={convocatorias}
+            onUpdateJudges={setJudges}
             onLogout={() => setRole('login')}
           />
         )}

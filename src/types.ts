@@ -82,6 +82,7 @@ export interface Documento {
   etiqueta: string;
   nombre: string;
   estado: EstadoDocumento;
+  url?: string;
   fileSize?: string;
   fechaCarga?: string;
   motivoRechazo?: string;
@@ -142,6 +143,7 @@ export interface DispensaMedica {
   parteExamenExenta?: string; // qué parte se exime
   fechaSolicitud?: string;
   diasAntelacion?: number;
+  dictamenMedico?: string;
 }
 
 // --- Evaluación por juez ---

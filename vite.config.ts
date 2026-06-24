@@ -22,8 +22,16 @@ export default defineConfig(() => {
         '/supabase-proxy': {
           target: 'https://nrqciegewjemksdabwsf.supabase.co',
           changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/supabase-proxy/, ''),
           secure: true,
+          rewrite: (path: string) => path.replace(/^\/supabase-proxy/, ''),
+          configure: (proxy, _options) => {
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              // Limpiar headers problemáticos que causan error 520 o CORS en Cloudflare/Supabase
+              proxyReq.removeHeader('origin');
+              proxyReq.removeHeader('referer');
+              proxyReq.setHeader('Host', 'nrqciegewjemksdabwsf.supabase.co');
+            });
+          }
         },
       },
     },

@@ -5,6 +5,7 @@ import ConfiguracionPerfilFederativo from './ConfiguracionPerfilFederativo';
 import { useUI } from '../contexts/UIContext';
 import { supabase } from '../lib/supabase';
 import { createAspirante, createJudge } from '../lib/api';
+import { generateUUID } from '../lib/uuid';
 import { sendMagicLinkForFirstTime } from '../lib/auth';
 
 interface AdminPortalProps {
@@ -91,7 +92,7 @@ export default function AdminPortal({
 
   // User Management
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [newUserType, setNewUserType] = useState<'juez'|'arbitro'|'deportista'|'director'>('juez');
+  const [newUserType, setNewUserType] = useState<'juez'|'arbitro'|'deportista'|'director'|'medico'>('juez');
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
 
@@ -103,6 +104,7 @@ export default function AdminPortal({
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [adminName, setAdminName] = useState<string>('Oficina Central');
 
   interface NotificationItem {
     id: string;
@@ -126,7 +128,7 @@ export default function AdminPortal({
       const latestAsp = aspirantes[0];
       if (latestAsp) {
         setNotifications(prev => [{
-          id: Date.now().toString(),
+          id: generateUUID(),
           title: 'Nueva Solicitud de Grado',
           desc: `${latestAsp.name} ha solicitado el grado de ${latestAsp.requestedBelt}.`,
           time: 'Justo ahora',
@@ -158,17 +160,34 @@ export default function AdminPortal({
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setAvatarUrl(user.user_metadata?.avatar_url || '');
+      if (user) {
+        setAvatarUrl(user.user_metadata?.avatar_url || '');
+        if (user.user_metadata?.full_name) setAdminName(user.user_metadata.full_name);
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) setAvatarUrl(session.user.user_metadata?.avatar_url || '');
+      if (session?.user) {
+        setAvatarUrl(session.user.user_metadata?.avatar_url || '');
+        if (session.user.user_metadata?.full_name) setAdminName(session.user.user_metadata.full_name);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserName.trim() || !newUserEmail.trim()) return;
+    const emailLower = newUserEmail.trim().toLowerCase();
+    if (newUserType === 'deportista') {
+      if (aspirantes.some(a => a.email.toLowerCase() === emailLower)) {
+        showAlert('Correo Registrado', `El correo ${emailLower} ya pertenece a un deportista.`);
+        return;
+      }
+    } else {
+      if (judges.some(j => j.email?.toLowerCase() === emailLower)) {
+        showAlert('Correo Registrado', `El correo ${emailLower} ya está registrado en el Padrón de Personal.`);
+        return;
+      }
+    }
 
     showConfirm(
       'Confirmar Creación',
@@ -177,11 +196,11 @@ export default function AdminPortal({
         try {
           const emailLower = newUserEmail.trim().toLowerCase();
           // 1. Send Magic Link via Supabase Auth (creates user if doesn't exist)
-          await sendMagicLinkForFirstTime(emailLower);
+          await sendMagicLinkForFirstTime(emailLower, newUserName, newUserType);
 
           // 2. Create Profile in Database & Update Local State
           if (newUserType === 'deportista') {
-            const newId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
+            const newId = generateUUID();
             const newAsp: Aspirante = {
               id: newId,
               name: newUserName,
@@ -203,8 +222,8 @@ export default function AdminPortal({
               onUpdateAspirantes([newAsp, ...aspirantes]);
             }
           } else {
-            const newId = `${newUserType === 'director' ? 'd' : (newUserType === 'juez' ? 'j' : 'a')}-${Math.floor(1000 + Math.random() * 9000)}`;
-            const rank = newUserType === 'director' ? 'Director' : (newUserType === 'juez' ? 'Juez Regional' : 'Árbitro Nacional');
+            const newId = `${newUserType === 'director' ? 'd' : (newUserType === 'juez' ? 'j' : (newUserType === 'medico' ? 'm' : 'a'))}-${Math.floor(1000 + Math.random() * 9000)}`;
+            const rank = newUserType === 'director' ? 'Director' : (newUserType === 'juez' ? 'Juez Regional' : (newUserType === 'medico' ? 'Médico' : 'Árbitro Nacional'));
             const newJudge: Judge = {
               id: newId,
               name: newUserName,
@@ -290,7 +309,7 @@ export default function AdminPortal({
       `¿Estás seguro de crear la convocatoria "${newConvTitle}" en ${newConvSede} para el día ${newConvDate}?`,
       () => {
         const nueva: Convocatoria = {
-          id: `conv-${Date.now()}`,
+          id: generateUUID(),
           titulo: newConvTitle,
           fecha: newConvDate,
           sede: newConvSede,
@@ -326,7 +345,7 @@ export default function AdminPortal({
     return true;
   });
 
-  const pendientes   = filteredAspirantes.filter(a => a.status === 'Pendiente' || a.status === 'Enviada' || a.status === 'Borrador');
+  const pendientes   = filteredAspirantes.filter(a => a.status === 'Pendiente' || a.status === 'Enviada' || a.status === 'Pendiente de revisión' as any);
   const subsanaciones= filteredAspirantes.filter(a => a.status === 'Subsanación');
   const validadas    = filteredAspirantes.filter(a => a.status === 'Validada' || a.status === 'Admitida');
   const rechazadas   = filteredAspirantes.filter(a => a.status === 'Rechazada');
@@ -481,7 +500,7 @@ export default function AdminPortal({
 
   // ── Documento con más documentos faltantes ──
   const aspirantesConPendientes = aspirantes.filter(a =>
-    (a.documentos || []).some(d => d.estado === 'no_cargado' || d.estado === 'cargado')
+    a.status !== 'Borrador' && (a.documentos || []).some(d => d.estado === 'no_cargado' || d.estado === 'cargado')
   );
 
   // ── Estadísticas ──
@@ -513,8 +532,8 @@ export default function AdminPortal({
               <span className="text-white font-black tracking-tighter text-xs">FMK</span>
            </div>
            <div>
-             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block">FMK Admin</span>
-             <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest block">Oficina Central</span>
+             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={adminName}>{adminName}</span>
+             <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal de Administración</span>
            </div>
         </div>
         <div className="flex items-center gap-2">
@@ -540,8 +559,10 @@ export default function AdminPortal({
               <span className="text-white font-black tracking-tighter text-base">FMK</span>
             </div>
             <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight">FMK Admin</h2>
-              <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Oficina Central</p>
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={adminName}>
+                {adminName}
+              </h2>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal de Administración</p>
             </div>
           </div>
           <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
@@ -700,7 +721,7 @@ export default function AdminPortal({
           <div className="flex-grow overflow-auto p-8 bg-[#fafafa] dark:bg-[#0a0a0a]">
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 tracking-tight">Hola, Oficina Central</h2>
+                <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 tracking-tight">Hola, {adminName}</h2>
                 <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Aquí tienes el resumen del ciclo de grados actual.</p>
               </div>
 
@@ -1052,83 +1073,106 @@ export default function AdminPortal({
             <h1 className="font-black text-[24px] text-stone-800 dark:text-stone-100 tracking-tight mb-1">Situaciones Especiales</h1>
             <p className="text-sm text-stone-500 dark:text-stone-400 mb-8">Dispensas médicas, convalidaciones y reconocimiento de méritos (RF-55 a RF-62).</p>
 
-            {/* Dispensas pendientes */}
+            {/* Dispensas médicas */}
             <section className="mb-6">
               <h2 className="font-bold text-sm text-secondary-custom uppercase tracking-wide mb-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-primary-container">medical_information</span>
-                Dispensas Médicas Pendientes — RF-55/56
+                Dispensas Médicas — RF-55/56
               </h2>
-              {aspirantes.filter(a => a.dispensaMedica?.solicitada && a.dispensaMedica?.aprobada === undefined).length === 0 ? (
+              {aspirantes.filter(a => a.dispensaMedica?.solicitada).length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 border-dashed rounded-xl mt-4">
                   <div className="w-12 h-12 bg-stone-100 dark:bg-white/10 text-stone-400 rounded-full flex items-center justify-center mb-3">
                     <span className="material-symbols-outlined text-2xl">medical_information</span>
                   </div>
                   <p className="text-sm font-bold text-stone-700 dark:text-stone-200">Todo al día</p>
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 text-center max-w-xs">No hay dispensas médicas pendientes de resolución en este momento.</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 text-center max-w-xs">No hay aspirantes con solicitud de dispensa médica.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {aspirantes
-                    .filter(a => a.dispensaMedica?.solicitada && a.dispensaMedica?.aprobada === undefined)
+                    .filter(a => a.dispensaMedica?.solicitada)
                     .map(asp => (
                       <div key={asp.id} className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl p-6 shadow-sm">
                         <div className="flex justify-between items-start gap-3">
                           <div>
-                            <h3 className="font-bold text-sm">{asp.name} <span className="font-mono text-[10px] text-secondary-custom">#{asp.id}</span></h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              {asp.dispensaMedica?.aprobada === undefined ? (
+                                <span className="text-[10px] font-bold border px-2 py-0.5 rounded-full font-mono bg-amber-100 text-amber-800 border-amber-200">Pendiente de Revisión</span>
+                              ) : asp.dispensaMedica?.aprobada ? (
+                                <span className="text-[10px] font-bold border px-2 py-0.5 rounded-full font-mono bg-green-100 text-green-800 border-green-200">Apto Médico (Aprobada)</span>
+                              ) : (
+                                <span className="text-[10px] font-bold border px-2 py-0.5 rounded-full font-mono bg-red-100 text-red-800 border-red-200">No Apto (Denegada)</span>
+                              )}
+                            </div>
+                            <h3 className="font-bold text-sm mt-2">{asp.name} <span className="font-mono text-[10px] text-secondary-custom">#{asp.id}</span></h3>
                             <p className="text-xs text-secondary-custom">{asp.club} · {asp.requestedBelt}</p>
                             <p className="text-xs mt-1 italic">"{asp.dispensaMedica?.motivoDispensa}"</p>
                             <p className="text-[10px] text-secondary-custom mt-0.5">Solicitada: {asp.dispensaMedica?.fechaSolicitud}</p>
+                            
+                            {/* Mostrar dictamen del médico si existe */}
+                            {asp.dispensaMedica?.dictamenMedico && (
+                              <div className="mt-3 p-3 bg-stone-50 dark:bg-[#111] rounded-lg border border-stone-100 dark:border-white/5">
+                                <p className="text-[10px] font-bold text-secondary-custom uppercase mb-1 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px]">stethoscope</span> Dictamen Médico
+                                </p>
+                                <p className="text-xs text-stone-700 dark:text-stone-300">{asp.dispensaMedica.dictamenMedico}</p>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                showConfirm(
-                                  'Aprobar Dispensa',
-                                  `¿Aprobar dispensa médica para ${asp.name}?`,
-                                  () => {
-                                    if (onUpdateAspiranteAtomic) {
-                                      onUpdateAspiranteAtomic(asp.id, {
-                                        dispensaMedica: { ...asp.dispensaMedica!, aprobada: true }
-                                      });
-                                    } else {
-                                      const updated = aspirantes.map(a => a.id === asp.id
-                                        ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: true } } : a
-                                      );
-                                      onUpdateAspirantes(updated);
-                                    }
-                                    showAlert('Dispensa Aprobada', 'Se ha aprobado la dispensa médica del aspirante.');
-                                  },
-                                  'Aprobar'
-                                );
-                              }}
-                              className="text-xs px-3 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-800"
-                            >Aprobar</button>
-                            <button
-                              onClick={() => {
-                                showConfirm(
-                                  'Denegar Dispensa',
-                                  `¿Denegar dispensa médica para ${asp.name}?`,
-                                  () => {
-                                    if (onUpdateAspiranteAtomic) {
-                                      onUpdateAspiranteAtomic(asp.id, {
-                                        dispensaMedica: { ...asp.dispensaMedica!, aprobada: false }
-                                      });
-                                    } else {
-                                      const updated = aspirantes.map(a => a.id === asp.id
-                                        ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: false } } : a
-                                      );
-                                      onUpdateAspirantes(updated);
-                                    }
-                                    showAlert('Dispensa Denegada', 'La dispensa médica fue rechazada y notificada.');
-                                  },
-                                  'Denegar',
-                                  'Cancelar',
-                                  true
-                                );
-                              }}
-                              className="text-xs px-3 py-1.5 bg-red-600 text-white rounded font-bold hover:bg-red-800"
-                            >Denegar</button>
-                          </div>
+                          
+                          {/* Botones de acción solo si está pendiente */}
+                          {asp.dispensaMedica?.aprobada === undefined && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  showConfirm(
+                                    'Aprobar Dispensa',
+                                    `¿Aprobar dispensa médica para ${asp.name}?`,
+                                    () => {
+                                      if (onUpdateAspiranteAtomic) {
+                                        onUpdateAspiranteAtomic(asp.id, {
+                                          dispensaMedica: { ...asp.dispensaMedica!, aprobada: true }
+                                        });
+                                      } else {
+                                        const updated = aspirantes.map(a => a.id === asp.id
+                                          ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: true } } : a
+                                        );
+                                        onUpdateAspirantes(updated);
+                                      }
+                                      showAlert('Dispensa Aprobada', 'Se ha aprobado la dispensa médica del aspirante.');
+                                    },
+                                    'Aprobar'
+                                  );
+                                }}
+                                className="text-xs px-3 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-800 transition"
+                              >Aprobar</button>
+                              <button
+                                onClick={() => {
+                                  showConfirm(
+                                    'Denegar Dispensa',
+                                    `¿Denegar dispensa médica para ${asp.name}?`,
+                                    () => {
+                                      if (onUpdateAspiranteAtomic) {
+                                        onUpdateAspiranteAtomic(asp.id, {
+                                          dispensaMedica: { ...asp.dispensaMedica!, aprobada: false }
+                                        });
+                                      } else {
+                                        const updated = aspirantes.map(a => a.id === asp.id
+                                          ? { ...a, dispensaMedica: { ...a.dispensaMedica!, aprobada: false } } : a
+                                        );
+                                        onUpdateAspirantes(updated);
+                                      }
+                                      showAlert('Dispensa Denegada', 'La dispensa médica fue rechazada y notificada.');
+                                    },
+                                    'Denegar',
+                                    'Cancelar',
+                                    true
+                                  );
+                                }}
+                                className="text-xs px-3 py-1.5 bg-red-600 text-white rounded font-bold hover:bg-red-800 transition"
+                              >Denegar</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1357,13 +1401,13 @@ export default function AdminPortal({
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-black text-lg flex items-center gap-2 text-stone-800 dark:text-stone-100">
                     <span className="material-symbols-outlined text-red-600">badge</span>
-                    Padrón de Jueces y Árbitros
+                    Padrón de Jueces, Árbitros y Médicos
                   </h3>
                   <button onClick={() => { setNewUserType('juez'); setShowAddUserModal(true); }} className="flex items-center gap-1 text-xs font-bold bg-stone-100 dark:bg-white/10 hover:bg-stone-200 dark:hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors">
                     <span className="material-symbols-outlined text-[14px]">person_add</span> Añadir
                   </button>
                 </div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">Cuentas habilitadas con acceso al portal de calificación y tatami.</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">Cuentas habilitadas con acceso al portal de calificación, arbitraje y dictamen médico.</p>
                 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-3 kanban-scroll">
                   {judges.map(j => (
@@ -1500,8 +1544,8 @@ export default function AdminPortal({
             <div className="w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
               <ConfiguracionPerfilFederativo 
                 roleName="Administrador Central (Oficina Central)" 
-                defaultName="Elvia Heredia" 
-                defaultEmail="admin@fmk.com"
+                defaultName={adminName} 
+                onUpdateName={(newName) => setAdminName(newName)}
               />
             </div>
           </div>
@@ -1720,7 +1764,7 @@ export default function AdminPortal({
               <div>
                 <select 
                   value={newUserType}
-                  onChange={e => setNewUserType(e.target.value as 'juez'|'arbitro'|'deportista'|'director')}
+                  onChange={e => setNewUserType(e.target.value as 'juez'|'arbitro'|'deportista'|'director'|'medico')}
                   className="w-full p-2.5 bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all dark:text-white"
                 >
                   {activeTab === 'configuracion' ? (
@@ -1728,6 +1772,7 @@ export default function AdminPortal({
                       <option value="director">Director de la FMK (Tribunal)</option>
                       <option value="juez">Juez / Evaluador de Grados</option>
                       <option value="arbitro">Árbitro</option>
+                      <option value="medico">Médico (Depto. Médico)</option>
                     </>
                   ) : (
                     <option value="deportista">Deportista (Estudiante / Aspirante)</option>

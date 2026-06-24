@@ -73,7 +73,7 @@ export default function DeportistaPortal({
 
   // Grado siguiente posible
   const gradoIndex = GRADOS_CONFIG.findIndex(g =>
-    g.nombre.toLowerCase().includes(deportista.currentBelt.toLowerCase().replace('cinturón ', '').split(' ')[0])
+    g.nombre.toLowerCase().includes((deportista.currentBelt || '').toLowerCase().replace('cinturón ', '').split(' ')[0])
   );
   const siguienteGrado = GRADOS_CONFIG[gradoIndex + 1] || GRADOS_CONFIG[0];
 
@@ -116,8 +116,10 @@ export default function DeportistaPortal({
               <span className="material-symbols-outlined text-white text-xl">sports_martial_arts</span>
             </div>
             <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-sm tracking-wide leading-tight">FMK Deportista</h2>
-              <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">Área Personal</p>
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-sm tracking-wide leading-tight truncate max-w-[120px]" title={deportista.name}>
+                {deportista.name}
+              </h2>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal del Deportista</p>
             </div>
           </div>
           <button onClick={toggleDarkMode} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
@@ -194,7 +196,10 @@ export default function DeportistaPortal({
              <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center shadow-sm">
                 <span className="material-symbols-outlined text-white text-xs">sports_martial_arts</span>
              </div>
-             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm">FMK Deportista</span>
+             <div>
+               <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={deportista.name}>{deportista.name}</span>
+               <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal del Deportista</span>
+             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">

@@ -5,9 +5,9 @@ import { getAuth } from "firebase/auth";
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDgN_GOhhl_O9poq6olgI9BbH3YbvhizKM",
-  authDomain: "fmk-elviaheredia-2c0d3.firebaseapp.com",
-  projectId: "fmk-elviaheredia-2c0d3",
-  storageBucket: "fmk-elviaheredia-2c0d3.firebasestorage.app",
+  authDomain: "fmk-castrokilnger-2c0d3.firebaseapp.com",
+  projectId: "fmk-castrokilnger-2c0d3",
+  storageBucket: "fmk-castrokilnger-2c0d3.firebasestorage.app",
   messagingSenderId: "304112930620",
   appId: "1:304112930620:web:6bffba96376687304e1839"
 };

@@ -101,138 +101,107 @@ export default function DeportistaPortal({
   ];
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex">
+    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex flex-col">
 
-      {/* ── Premium Sidebar ─────────────────────────────────────────────────── */}
-      <nav className="hidden lg:flex flex-col h-screen w-72 fixed left-0 top-0 border-r border-stone-200/50 dark:border-white/10 shadow-2xl shadow-stone-200/20 bg-white dark:bg-[#151515] py-6 z-50 overflow-hidden">
-        
-        {/* Abstract Background Decoration */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-red-50 to-red-100/50 rounded-full blur-3xl -translate-y-24 translate-x-12 mix-blend-multiply pointer-events-none" />
-
-        {/* Brand / Logo Area */}
-        <div className="px-6 mb-8 relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/30">
-              <span className="material-symbols-outlined text-white text-xl">sports_martial_arts</span>
+      {/* ── Premium Top Navigation Bar ─────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-black/60 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/10 shadow-sm w-full">
+        <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+          
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-lg shadow-red-900/30">
+              <span className="material-symbols-outlined text-white text-2xl">sports_martial_arts</span>
             </div>
-            <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-sm tracking-wide leading-tight truncate max-w-[120px]" title={deportista.name}>
+            <div className="hidden sm:block">
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[150px]" title={deportista.name}>
                 {deportista.name}
               </h2>
-              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal del Deportista</p>
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Portal del Deportista</p>
             </div>
           </div>
-          <button onClick={toggleDarkMode} className="w-8 h-8 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
-            <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-          </button>
-        </div>
 
-        {/* User Profile Summary */}
-        <div className="px-6 mb-8 relative z-10 flex flex-col items-center">
-          <label className="w-20 h-20 rounded-full overflow-hidden mb-3 border-4 border-white shadow-xl shadow-stone-200 dark:shadow-none flex items-center justify-center relative cursor-pointer group bg-stone-50 dark:bg-white/5">
-            {deportista.avatarUrl ? (
-              <img src={deportista.avatarUrl} alt={deportista.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="material-symbols-outlined text-4xl text-stone-300">person</span>
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
-              <span className="material-symbols-outlined text-white text-lg">photo_camera</span>
+          {/* Center Navigation Links (Tabs) */}
+          <nav className="hidden lg:flex items-center gap-1 mx-4 overflow-x-auto no-scrollbar">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all font-bold text-sm ${
+                  activeTab === tab.id
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                    : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${activeTab === tab.id ? 'text-red-500' : ''}`}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Right Actions (Actions, Theme, Profile) */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                if (bloqueadoPorSuspenso) showToast('No puedes inscribirte hasta transcurridos 3 meses desde el último suspenso (RF-53).', 'error');
+                else onIniciarSolicitud();
+              }}
+              className={`hidden md:flex px-4 py-2 rounded-xl text-xs font-bold shadow-lg items-center gap-2 transition-all ${
+                bloqueadoPorSuspenso ? 'bg-stone-400/50 text-stone-300 cursor-not-allowed border border-stone-500/20' : 'bg-red-600/80 hover:bg-red-600 text-white border border-red-500/50 shadow-red-900/20'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">{bloqueadoPorSuspenso ? 'lock' : 'how_to_reg'}</span>
+              Solicitar Examen
+            </button>
+
+            <button onClick={toggleDarkMode} className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-500 hover:text-stone-800 dark:text-stone-300 dark:hover:text-white transition-all">
+              <span className="material-symbols-outlined text-[20px]">dark_mode</span>
+            </button>
+
+            <div className="w-px h-8 bg-stone-200 dark:bg-white/10 mx-1"></div>
+
+            <div className="flex items-center gap-2 cursor-pointer group">
+              <label className="relative cursor-pointer">
+                {deportista.avatarUrl ? (
+                  <img src={deportista.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-xl object-cover border border-stone-200 shadow-sm" />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-stone-200 dark:bg-white/10 flex items-center justify-center text-stone-600 dark:text-stone-300 font-bold text-sm border border-stone-300 dark:border-white/20">
+                    <span className="material-symbols-outlined">person</span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-          </label>
-          <p className="font-black text-base text-stone-800 dark:text-stone-100 text-center leading-tight">{deportista.name}</p>
-          <span className="mt-2 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">{deportista.currentBelt}</span>
-        </div>
-
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-4 no-scrollbar space-y-1 relative z-10">
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2 mb-2">Menú Principal</p>
-          {tabs.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left text-sm font-medium ${
-                activeTab === item.id
-                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-100 hover:bg-stone-50 dark:hover:bg-white/5'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[20px] ${activeTab === item.id ? 'filled text-red-600' : 'text-stone-400'}`}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="mt-auto px-6 pt-6 border-t border-stone-100 dark:border-white/10 relative z-10 bg-white dark:bg-[#151515]">
-          <button
-            onClick={() => {
-              if (bloqueadoPorSuspenso) showToast('No puedes inscribirte hasta transcurridos 3 meses desde el último suspenso (RF-53).', 'error');
-              else onIniciarSolicitud();
-            }}
-            className={`w-full mb-3 text-white transition-all py-3 px-4 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:-translate-y-0.5 ${
-              bloqueadoPorSuspenso ? 'bg-stone-400 shadow-stone-400/20 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800 shadow-red-700/20'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[16px]">{bloqueadoPorSuspenso ? 'lock' : 'how_to_reg'}</span>
-            Solicitar Examen
-          </button>
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:text-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-xs font-bold cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
-            Cerrar Sesión
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Main Content Area ──────────────────────────────────────────────── */}
-      <main className="flex-1 lg:ml-72 flex flex-col min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a]">
-        
-        {/* Mobile Header */}
-        <div className="lg:hidden sticky top-0 z-40 bg-white/80 dark:bg-[#151515]/80 backdrop-blur-md border-b border-stone-200 dark:border-white/20 p-4 flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center shadow-sm">
-                <span className="material-symbols-outlined text-white text-xs">sports_martial_arts</span>
-             </div>
-             <div>
-               <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={deportista.name}>{deportista.name}</span>
-               <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal del Deportista</span>
-             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-            </button>
-            <button onClick={onLogout} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">logout</span>
+            
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-xl ml-2">
+              <span className="material-symbols-outlined">logout</span>
             </button>
           </div>
         </div>
-        
-        {/* Mobile Nav Scroll */}
-        <div className="lg:hidden sticky top-[65px] z-30 bg-white dark:bg-[#151515] border-b border-stone-100 dark:border-white/10 px-2 overflow-x-auto no-scrollbar py-2 flex gap-1 shadow-sm">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center min-w-[75px] px-2 py-2 rounded-xl text-[10px] font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-100'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[20px] mb-1 ${activeTab === tab.id ? 'filled text-red-600' : 'text-stone-400'}`}>
-                {tab.icon}
-              </span>
-              <span className="truncate w-full text-center">{tab.label}</span>
-            </button>
-          ))}
+
+        {/* Mobile Tabs Scrollable row */}
+        <div className="lg:hidden w-full overflow-x-auto no-scrollbar border-t border-stone-200 dark:border-white/10 bg-white/50 dark:bg-black/40 backdrop-blur-md">
+          <div className="flex items-center px-4 py-2 gap-2 w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === tab.id ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'text-stone-500'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
+      </header>
+
+      {/* ── Main Content Area ──────────────────────────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col relative z-10">
 
         {/* Content Wrapper */}
-        <div className="flex-1 p-6 lg:p-10 max-w-[1200px] w-full mx-auto">
+        <div className="flex-1 w-full mx-auto">
 
         {/* ════════════════════════════
             TAB: PROGRESO (Dashboard Gamificado)

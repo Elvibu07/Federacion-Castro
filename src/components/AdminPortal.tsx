@@ -230,8 +230,8 @@ export default function AdminPortal({
               getDocs(q).then(snap => {
                 if (!snap.empty && snap.docs[0].data().name) {
                   setAdminName(snap.docs[0].data().name);
-                } else if (user.email?.toLowerCase() === 'elvialeonsh@gmail.com') {
-                  setAdminName('Elvia Heredia');
+                } else if (user.email?.toLowerCase() === 'castrokilnger@gmail.com') {
+                  setAdminName('CASTRO KILNGER');
                 } else {
                   setAdminName(user.email || 'Oficina Central');
                 }
@@ -593,200 +593,119 @@ export default function AdminPortal({
   ];
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex">
+    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex flex-col">
 
-      {/* Mobile Header */}
-      <div className="xl:hidden sticky top-0 z-40 bg-white/80 dark:bg-[#151515]/80 backdrop-blur-md border-b border-stone-200 dark:border-white/20 p-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center shadow-sm">
-              <span className="text-white font-black tracking-tighter text-xs">FMK</span>
-           </div>
-           <div>
-             <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={adminName}>{adminName}</span>
-             <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal de Administración</span>
-           </div>
-        </div>
-        <div className="flex items-center gap-2">
-            <button onClick={handleInjectTestData} className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold text-[10px] uppercase tracking-widest rounded-md transition-colors shadow-sm flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">database</span>
-              Poblar Datos
-            </button>
-          <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 hover:bg-stone-100 dark:hover:bg-white/10 rounded-md transition-all">
-            <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-          </button>
-          <button onClick={onLogout} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 hover:bg-red-50 hover:text-red-600 rounded-md transition-all">
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Premium Sidebar ─────────────────────────────────────────────────── */}
-      <nav className="hidden xl:flex flex-col h-screen w-80 fixed left-0 top-0 border-r border-stone-200/50 dark:border-white/10 shadow-2xl shadow-stone-200/20 bg-white dark:bg-[#151515] py-8 z-50 overflow-hidden print:hidden">
-        
-        {/* Abstract Background Decoration */}
-        <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-red-50 to-red-100/50 rounded-full blur-3xl -translate-y-24 translate-x-12 mix-blend-multiply pointer-events-none" />
-
-        {/* Brand / Logo Area */}
-        <div className="px-8 mb-10 relative z-10 flex items-center justify-between">
+      {/* ── Premium Top Navigation Bar ─────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-black/60 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/10 shadow-sm w-full">
+        <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+          
+          {/* Logo & Brand */}
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/30">
-              <span className="text-white font-black tracking-tighter text-base">FMK</span>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-lg shadow-red-900/30">
+              <span className="text-white font-black tracking-tighter text-lg">FMK</span>
             </div>
-            <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={adminName}>
+            <div className="hidden sm:block">
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight" title={adminName}>
                 {adminName}
               </h2>
-              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal de Administración</p>
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Portal Administrativo</p>
             </div>
           </div>
-          <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
-            <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-          </button>
-        </div>
 
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-6 no-scrollbar space-y-2 relative z-10">
-          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest px-2 mb-4">Navegación</p>
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all text-left text-base font-bold ${
-                activeTab === tab.id
-                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 shadow-sm border border-red-100 dark:border-red-900/50'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:bg-white/5'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[24px] ${activeTab === tab.id ? 'text-red-600 dark:text-red-400' : 'text-stone-400'}`}>{tab.icon}</span>
-              <span className="flex-1">{tab.label}</span>
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className={`text-xs font-black px-2 py-1 rounded-full ${
-                  activeTab === tab.id ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300' : 'bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-stone-300'
-                }`}>{tab.count}</span>
-              )}
-            </button>
-          ))}
-        </div>
+          {/* Center Navigation Links (Tabs) */}
+          <nav className="hidden xl:flex items-center gap-1 mx-4 overflow-x-auto no-scrollbar">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all font-bold text-sm ${
+                  activeTab === tab.id
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                    : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${activeTab === tab.id ? 'text-red-500' : ''}`}>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                    activeTab === tab.id ? 'bg-red-500 text-white' : 'bg-stone-200 dark:bg-white/10'
+                  }`}>{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </nav>
 
-        {/* Footer Actions */}
-        <div className="mt-auto px-8 pt-8 border-t border-stone-100 dark:border-white/10 relative z-10 bg-white dark:bg-[#151515] space-y-2">
-          <button onClick={onLogout} className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:text-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-sm font-bold cursor-pointer">
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            Cerrar Sesión
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Main ──────────────────────────────────────────────────────────── */}
-      <main className="flex-1 xl:ml-80 flex flex-col min-h-screen relative print:hidden overflow-hidden bg-[#f8f9fa] dark:bg-[#0a0a0a] w-full xl:w-[calc(100%-20rem)]">
-
-        {/* Top bar (SaaS Style) */}
-        <header className={`flex items-center w-full px-10 h-24 z-30 flex-shrink-0 transition-all ${
-          activeTab === 'perfil' 
-            ? 'absolute top-0 right-0 bg-transparent border-transparent justify-end' 
-            : 'sticky top-0 bg-white dark:bg-[#151515] border-b border-stone-200/60 dark:border-white/10 justify-between'
-        }`}>
-          {activeTab !== 'perfil' && (
-            <div className="flex items-center gap-8">
-              <h1 className="text-3xl font-black text-stone-800 dark:text-stone-100 tracking-tight hidden lg:block">
-                {tabs.find(t => t.id === activeTab)?.label}
-              </h1>
+          {/* Right Actions (Search, Notifications, Profile) */}
+          <div className="flex items-center gap-4">
             {['kanban', 'documentos'].includes(activeTab) && (
-              <>
-                <div className="hidden md:flex items-center relative w-64">
-                  <span className="material-symbols-outlined absolute left-3 text-stone-400 text-[18px]">search</span>
-                  <input
-                    className="w-full pl-10 pr-3 py-1.5 bg-stone-100 dark:bg-white/10 border-transparent rounded-md text-xs focus:bg-white dark:bg-[#151515] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-stone-500 dark:text-stone-400 text-stone-800 dark:text-stone-100 font-medium"
-                    placeholder="Buscar aspirante..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center bg-stone-100 dark:bg-white/10 p-0.5 rounded-md overflow-hidden">
-                  {(['All', 'Kyu', 'Dan'] as const).map(f => (
-                    <button
-                      key={f}
-                      onClick={() => setGradeFilter(f)}
-                      className={`px-3 py-1 text-[11px] font-bold transition-all rounded-[4px] ${
-                        gradeFilter === f ? 'bg-white dark:bg-[#151515] text-indigo-600 shadow-sm' : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:text-stone-200'
-                      }`}
-                    >
-                      {f === 'All' ? 'TODOS' : f.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </>
+              <div className="hidden md:flex items-center relative w-48 lg:w-64">
+                <span className="material-symbols-outlined absolute left-3 text-stone-400 text-[18px]">search</span>
+                <input
+                  className="w-full pl-10 pr-3 py-2 bg-stone-100/50 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all text-stone-800 dark:text-white placeholder:text-stone-500"
+                  placeholder="Buscar aspirante..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
             )}
-          </div>
-          )}
-          <div className="flex items-center gap-4 ml-auto">
+
+            <button onClick={handleInjectTestData} className="hidden lg:flex px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 font-bold text-xs uppercase rounded-xl transition-all items-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">database</span>
+              Poblar
+            </button>
+
+            <button onClick={toggleDarkMode} className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-500 hover:text-stone-800 dark:text-stone-300 dark:hover:text-white transition-all">
+              <span className="material-symbols-outlined text-[20px]">dark_mode</span>
+            </button>
+
             <div className="relative">
               <button 
                 onClick={handleToggleNotifications}
-                className={`text-stone-400 hover:text-stone-700 dark:text-stone-200 transition-colors relative flex items-center justify-center ${unreadCount > 0 ? 'animate-bounce text-amber-500' : ''}`}
+                className={`w-10 h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center transition-all ${unreadCount > 0 ? 'text-amber-500 ring-2 ring-amber-500/50' : 'text-stone-500 hover:text-stone-800 dark:text-stone-300'}`}
               >
-                <span className="material-symbols-outlined text-[24px]">notifications</span>
-                {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
-                )}
+                <span className="material-symbols-outlined text-[20px]">notifications</span>
+                {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-[#0a0a0a]"></span>}
               </button>
-              
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="bg-stone-50 dark:bg-white/5 px-4 py-3 border-b border-stone-200 dark:border-white/10 flex justify-between items-center">
-                    <h3 className="font-bold text-sm text-stone-800 dark:text-stone-100">Notificaciones</h3>
-                    {unreadCount > 0 && (
-                      <span className="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{unreadCount} Nuevas</span>
-                    )}
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-stone-500 text-sm">No hay notificaciones.</div>
-                    ) : (
-                      notifications.map(n => (
-                        <div 
-                          key={n.id}
-                          onClick={() => { if(n.tab) setActiveTab(n.tab); setShowNotifications(false); }}
-                          className={`px-4 py-3 border-b border-stone-100 dark:border-white/5 hover:bg-stone-50 dark:hover:bg-white/5 transition cursor-pointer ${n.read ? 'opacity-70' : 'bg-blue-50/50 dark:bg-blue-900/10'}`}
-                        >
-                          <div className="flex gap-3">
-                            <div className={`w-8 h-8 rounded-full ${n.bg} flex items-center justify-center ${n.color} flex-shrink-0`}>
-                              <span className="material-symbols-outlined text-[16px]">{n.icon}</span>
-                            </div>
-                            <div>
-                              <p className={`text-xs ${n.read ? 'font-medium' : 'font-bold'} text-stone-800 dark:text-stone-100`}>{n.title}</p>
-                              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 leading-snug">{n.desc}</p>
-                              <p className="text-[9px] text-stone-400 mt-1 font-mono">{n.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <div className="bg-stone-50 dark:bg-white/5 px-4 py-2 border-t border-stone-200 dark:border-white/10 text-center">
-                    <button 
-                      onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
-                      className="text-[11px] font-bold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 transition-colors"
-                    >
-                      Marcar todo como leído
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
-            <div className="w-px h-8 bg-stone-200"></div>
-            <div onClick={() => setActiveTab('perfil')} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+
+            <div className="w-px h-8 bg-stone-200 dark:bg-white/10 mx-1"></div>
+
+            <button onClick={() => setActiveTab('perfil')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-12 h-12 rounded-xl object-cover border border-stone-200 shadow-sm" />
+                <img src={avatarUrl} alt="Avatar" className="w-10 h-10 rounded-xl object-cover border border-stone-200 shadow-sm" />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-700 font-bold text-base border border-red-200 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-stone-200 dark:bg-white/10 flex items-center justify-center text-stone-600 dark:text-stone-300 font-bold text-sm border border-stone-300 dark:border-white/20">
                   OC
                 </div>
               )}
-            </div>
+            </button>
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-xl ml-2">
+              <span className="material-symbols-outlined">logout</span>
+            </button>
           </div>
-        </header>
+        </div>
+
+        {/* Mobile Tabs Scrollable row */}
+        <div className="xl:hidden w-full overflow-x-auto no-scrollbar border-t border-stone-200 dark:border-white/10 bg-white/50 dark:bg-black/40 backdrop-blur-md">
+          <div className="flex items-center px-4 py-2 gap-2 w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === tab.id ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'text-stone-500'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main Content Area ──────────────────────────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col relative z-10">
 
         {/* ════════════════════════════════════════════════
             TAB: DASHBOARD
@@ -908,82 +827,87 @@ export default function AdminPortal({
           </div>
         )}
         {activeTab === 'kanban' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] p-8">
-            <div className="mb-8 flex-shrink-0">
-              <h1 className="font-black text-[24px] text-stone-800 dark:text-stone-100 tracking-tight">Flujo de Validación (Kanban)</h1>
-              <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">Evalúa, subsana y valida expedientes federativos en tiempo real.</p>
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col bg-transparent p-4 sm:p-0">
+            <div className="mb-6 flex-shrink-0">
+              <h1 className="font-black text-[28px] text-white tracking-tight">Expedientes (Data Grid)</h1>
+              <p className="text-sm text-white/50 mt-0.5">Gestión tabular avanzada de solicitudes de grados federativos.</p>
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-6">
                 {[
-                  { label: 'PENDIENTES',   val: pendientes.length,    color: 'text-amber-700' },
-                  { label: 'SUBSANACIÓN',  val: subsanaciones.length, color: 'text-red-700' },
-                  { label: 'VALIDADAS',    val: validadas.length,     color: 'text-blue-700' },
-                  { label: 'EVALUACIÓN',   val: enEvaluacion.length,  color: 'text-purple-700' },
-                  { label: 'COMPLETADOS',  val: `${completionRate}%`, color: 'text-teal-700' },
+                  { label: 'PENDIENTES',   val: pendientes.length,    color: 'text-amber-500 border-amber-500/30 bg-amber-500/10' },
+                  { label: 'SUBSANACIÓN',  val: subsanaciones.length, color: 'text-red-500 border-red-500/30 bg-red-500/10' },
+                  { label: 'VALIDADAS',    val: validadas.length,     color: 'text-blue-500 border-blue-500/30 bg-blue-500/10' },
+                  { label: 'EVALUACIÓN',   val: enEvaluacion.length,  color: 'text-purple-500 border-purple-500/30 bg-purple-500/10' },
+                  { label: 'COMPLETADOS',  val: `${completionRate}%`, color: 'text-emerald-500 border-emerald-500/30 bg-emerald-500/10' },
                 ].map(m => (
-                  <div key={m.label} className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold mb-1 tracking-wider">{m.label}</span>
-                    <span className={`text-2xl font-black ${m.color}`}>{m.val}</span>
+                  <div key={m.label} className={`border rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center backdrop-blur-md ${m.color}`}>
+                    <span className="text-[10px] font-bold mb-1 tracking-widest opacity-80">{m.label}</span>
+                    <span className="text-3xl font-black">{m.val}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex-grow overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-4 h-full min-w-[1100px] pb-4">
-                {[
-                  { title: 'Expediente Pendiente', items: pendientes, color: 'bg-amber-500', badge: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300', borderL: 'border-l-amber-500' },
-                  { title: 'Revisión / Subsanación', items: subsanaciones, color: 'bg-red-600', badge: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300', borderL: 'border-l-red-600' },
-                  { title: 'Validada / Admitida',   items: validadas, color: 'bg-blue-700', badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300', borderL: 'border-l-blue-700' },
-                  { title: 'Evaluación / Acta',     items: enEvaluacion, color: 'bg-purple-700', badge: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300', borderL: 'border-l-purple-700' },
-                  { title: 'Rechazado',             items: rechazadas, color: 'bg-stone-500', badge: 'bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300', borderL: 'border-l-stone-500' },
-                ].map(col => (
-                  <div key={col.title} className="flex-1 flex flex-col bg-stone-100 dark:bg-white/10 border border-stone-200 dark:border-white/20 rounded-xl overflow-hidden h-[calc(100vh-320px)] shadow-sm">
-                    <div className="p-3 border-b border-stone-200 dark:border-white/20 bg-white dark:bg-[#151515] flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${col.color}`}></span>
-                        <h3 className="font-bold text-sm text-stone-800 dark:text-stone-100">{col.title}</h3>
-                      </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${col.badge}`}>{col.items.length}</span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto kanban-scroll p-3 flex flex-col gap-3">
-                      {col.items.map(asp => (
-                        <div
-                          key={asp.id}
-                          onClick={() => setSelectedAspirante(asp)}
-                          className={`bg-white dark:bg-[#151515] p-3.5 rounded border border-surface-container-highest shadow-xs hover:shadow-md transition-all cursor-pointer border-l-4 ${col.borderL} hover:border-primary-container`}
-                        >
-                          <div className="flex justify-between items-start mb-1.5">
-                            <span className="font-mono text-[9px] text-secondary-custom font-bold">#{asp.id}</span>
-                            <span className={`text-[9px] font-bold border px-1.5 py-0.5 rounded font-mono ${STATUS_COLORS[asp.status] || 'text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-white/5 border-stone-200 dark:border-white/20'}`}>
-                              {asp.status.toUpperCase()}
-                            </span>
+            <div className="flex-grow overflow-hidden bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl flex flex-col">
+              <div className="overflow-x-auto overflow-y-auto flex-1 p-0 m-0">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead className="sticky top-0 z-10 bg-black/60 backdrop-blur-xl border-b border-white/10">
+                    <tr className="text-white/50 uppercase text-[10px] font-black tracking-widest">
+                      <th className="p-4 pl-6 font-mono w-24">ID</th>
+                      <th className="p-4">Aspirante</th>
+                      <th className="p-4">Club</th>
+                      <th className="p-4">Grado Solicitado</th>
+                      <th className="p-4">Docs</th>
+                      <th className="p-4">Estado Actual</th>
+                      <th className="p-4 text-right pr-6">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredAspirantes.map(asp => (
+                      <tr 
+                        key={asp.id} 
+                        onClick={() => setSelectedAspirante(asp)}
+                        className="hover:bg-white/5 transition-colors cursor-pointer group"
+                      >
+                        <td className="p-4 pl-6 font-mono text-[11px] text-white/50">#{asp.id}</td>
+                        <td className="p-4 font-bold text-white group-hover:text-red-400 transition-colors">{asp.name}</td>
+                        <td className="p-4 text-white/70 text-xs">{asp.club}</td>
+                        <td className="p-4 font-black text-red-500 text-xs">{asp.requestedBelt}</td>
+                        <td className="p-4">
+                          <div className="flex gap-1">
+                            {(asp.documentos || []).slice(0,5).map(d => (
+                              <span key={d.tipo} className={`w-2 h-2 rounded-full ${
+                                d.estado === 'aprobado' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+                                d.estado === 'cargado' ? 'bg-blue-400' :
+                                d.estado === 'rechazado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                                'bg-white/20'
+                              }`} title={d.etiqueta} />
+                            ))}
                           </div>
-                          <h4 className="font-extrabold text-[14px] text-on-surface leading-tight">{asp.name}</h4>
-                          <p className="text-[11px] text-secondary-custom mt-0.5">{asp.club}</p>
-                          {asp.correctionReason && (
-                            <p className="text-[10px] text-red-700 mt-1.5 bg-red-50 border border-red-100 p-1.5 rounded line-clamp-2">{asp.correctionReason}</p>
-                          )}
-                          <div className="mt-3 border-t border-surface-container-high pt-2 flex justify-between items-center">
-                            <span className="font-black text-[11px] text-primary-container">{asp.requestedBelt}</span>
-                            <div className="flex gap-1">
-                              {(asp.documentos || []).slice(0,5).map(d => (
-                                <span key={d.tipo} className={`w-1.5 h-1.5 rounded-full ${
-                                  d.estado === 'aprobado' ? 'bg-green-500' :
-                                  d.estado === 'cargado' ? 'bg-blue-400' :
-                                  d.estado === 'rechazado' ? 'bg-red-500' :
-                                  'bg-stone-200'
-                                }`} title={d.etiqueta} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {col.items.length === 0 && (
-                        <div className="text-center py-8 text-xs text-[#5a403c] italic">Sin solicitudes en esta columna.</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        </td>
+                        <td className="p-4">
+                          <span className={`text-[9px] font-bold border px-2 py-1 rounded-full font-mono shadow-sm ${STATUS_COLORS[asp.status] || 'bg-white/10 text-white/70 border-white/20'}`}>
+                            {asp.status.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right pr-6">
+                          <button 
+                            className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-colors border border-transparent hover:border-red-500/30"
+                            onClick={(e) => { e.stopPropagation(); setSelectedAspirante(asp); }}
+                          >
+                            <span className="material-symbols-outlined text-[18px] block">visibility</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredAspirantes.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-12 text-center text-white/40 text-sm italic">
+                          No hay registros que coincidan con la búsqueda.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

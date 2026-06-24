@@ -3,81 +3,140 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Bushido Modern Colors Palette */
-  --color-primary-custom: #610000;
-  --color-primary-container: #8b0000;
-  --color-on-primary-container: #ff907f;
+  /* Global Premium Glass Tokens */
+  --color-primary-custom: #f43f5e;
+  --color-primary-container: #9f1239;
+  --color-on-primary-container: #ffe4e6;
   --color-on-primary: #ffffff;
-  --color-surface-custom: #f8f9fa;
-  --color-surface-dim: #d9dadb;
-  --color-surface-bright: #f8f9fa;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f3f4f5;
-  --color-surface-container: #edeeef;
-  --color-surface-container-high: #e7e8e9;
-  --color-surface-container-highest: #e1e3e4;
-  --color-on-surface: #191c1d;
-  --color-on-surface-variant: #5a403c;
-  --color-inverse-surface: #2e3132;
-  --color-inverse-on-surface: #f0f1f2;
-  --color-outline: #8e706b;
-  --color-outline-variant: #e3beb8;
-  --color-surface-tint: #b52619;
-  --color-secondary-custom: #5f5e5e;
-  --color-secondary-container: #e2dfde;
-  --color-on-secondary-container: #636262;
-  --color-tertiary-custom: #262d39;
-  --color-on-tertiary-container: #a9b0bf;
-  --color-tertiary-container: #3c4350;
-  --color-error-custom: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-
-  --color-accent-blue: #1e40af;
+  
+  --color-surface-custom: rgba(10, 10, 10, 0.4);
+  --color-surface-dim: rgba(5, 5, 5, 0.6);
+  --color-surface-bright: rgba(255, 255, 255, 0.05);
+  
+  --color-surface-container-lowest: rgba(0, 0, 0, 0.2);
+  --color-surface-container-low: rgba(255, 255, 255, 0.02);
+  --color-surface-container: rgba(255, 255, 255, 0.03);
+  --color-surface-container-high: rgba(255, 255, 255, 0.05);
+  --color-surface-container-highest: rgba(255, 255, 255, 0.08);
+  
+  --color-on-surface: #f8fafc;
+  --color-on-surface-variant: #94a3b8;
+  
+  --color-inverse-surface: #f1f5f9;
+  --color-inverse-on-surface: #0f172a;
+  
+  --color-outline: rgba(255, 255, 255, 0.1);
+  --color-outline-variant: rgba(255, 255, 255, 0.05);
+  
+  --color-surface-tint: #fb7185;
+  --color-secondary-custom: #94a3b8;
+  --color-secondary-container: rgba(255, 255, 255, 0.05);
+  --color-on-secondary-container: #cbd5e1;
+  
+  --color-tertiary-custom: #cbd5e1;
+  --color-on-tertiary-container: #f8fafc;
+  --color-tertiary-container: rgba(255, 255, 255, 0.08);
+  
+  --color-error-custom: #ef4444;
+  --color-error-container: rgba(153, 27, 27, 0.3);
+  --color-on-error-container: #fca5a5;
+  
+  --color-accent-blue: #3b82f6;
 }
 
+/* Force dark theme everywhere since it's the premium aesthetic */
 .dark {
-  --color-primary-custom: #ffb4ab;
-  --color-primary-container: #93000a;
-  --color-on-primary-container: #ffdad6;
-  --color-on-primary: #690005;
-  
-  --color-surface-custom: #191c1d;
-  --color-surface-dim: #111415;
-  --color-surface-bright: #343638;
-  --color-surface-container-lowest: #0e1112;
-  --color-surface-container-low: #191c1d;
-  --color-surface-container: #1d2021;
-  --color-surface-container-high: #282a2c;
-  --color-surface-container-highest: #333537;
-  
-  --color-on-surface: #e1e3e4;
-  --color-on-surface-variant: #c0c7cd;
-  
-  --color-inverse-surface: #e1e3e4;
-  --color-inverse-on-surface: #2e3132;
-  
-  --color-outline: #899298;
-  --color-outline-variant: #40484d;
-  
-  --color-surface-tint: #ffb4ab;
-  --color-secondary-custom: #c0c7cd;
-  --color-secondary-container: #3d454a;
-  --color-on-secondary-container: #dce3e9;
-  
-  --color-tertiary-custom: #c6c6c6;
-  --color-on-tertiary-container: #e2e2e2;
-  --color-tertiary-container: #474747;
-  
-  --color-error-custom: #ffb4ab;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
 }
 
-/* Material Symbols configuration and helper structures */
+/* Overriding tailwind background classes globally to enforce glassmorphism */
+.bg-surface-custom, 
+.bg-surface-container-low, 
+.bg-surface-container, 
+.bg-surface-container-high, 
+.bg-surface-container-highest,
+.bg-white,
+.dark\:bg-\[\#151515\] {
+  background-color: var(--color-surface-container) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Text overrides for readability on dark glass */
+.text-stone-800,
+.text-stone-900,
+.text-gray-900,
+.text-gray-800 {
+  color: #f8fafc !important;
+}
+.text-stone-700,
+.text-stone-600,
+.text-stone-500,
+.text-gray-600,
+.text-gray-500 {
+  color: #cbd5e1 !important;
+}
+.bg-stone-50, .bg-stone-100, .bg-gray-50, .bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+.bg-stone-200, .hover\:bg-stone-200:hover, .hover\:bg-stone-100:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Base Body Styles */
+body {
+  font-family: var(--font-sans);
+  background-color: #050505;
+  color: var(--color-on-surface);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Glass inputs */
+input, select, textarea {
+  background-color: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  border-radius: 0.75rem !important;
+}
+input::placeholder, textarea::placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(244, 63, 94, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.2) !important;
+  background-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Custom Premium Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2); 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1); 
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.5);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.5); 
+}
+
+.kanban-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -93,36 +152,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 }
 
 .material-symbols-outlined.filled {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Custom scrollbars for Kanban columns */
-.kanban-scroll::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.kanban-scroll::-webkit-scrollbar-track {
-  background: transparent; 
-}
-.kanban-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-surface-container-highest); 
-  border-radius: 4px;
-}
-.kanban-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--color-secondary-container); 
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-surface-custom);
-  color: var(--color-on-surface);
-}
-
-html.dark select option {
-  background-color: #191c1d;
-  color: #e1e3e4;
+/* Disable generic light mode select option colors */
+select option {
+  background-color: #111 !important;
+  color: #fff !important;
 }

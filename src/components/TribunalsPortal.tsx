@@ -299,119 +299,91 @@ export default function TribunalsPortal({
   ];
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex">
-      
-      {/* ── Premium Sidebar ─────────────────────────────────────────────────── */}
-      <nav className="hidden xl:flex flex-col h-screen w-80 fixed left-0 top-0 border-r border-stone-200/50 dark:border-white/10 shadow-2xl shadow-stone-200/20 bg-white dark:bg-[#151515] py-8 z-50 overflow-hidden print:hidden">
-        
-        {/* Abstract Background Decoration */}
-        <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-red-50 to-red-100/50 rounded-full blur-3xl -translate-y-24 translate-x-12 mix-blend-multiply pointer-events-none" />
-
-        {/* Brand / Logo Area */}
-        <div className="px-8 mb-10 relative z-10 flex items-center justify-between">
+    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex flex-col">
+      {/* ── Premium Top Navigation Bar ─────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-black/60 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/10 shadow-sm w-full print:hidden">
+        <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+          
+          {/* Logo & Brand */}
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/30">
-              <span className="text-white font-black tracking-tighter text-base">FMK</span>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-lg shadow-red-900/30">
+              <span className="text-white font-black tracking-tighter text-lg">FMK</span>
             </div>
-            <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={judges.find(j => j.id === activeJudgeId)?.name || 'HolaSoyGerman'}>
-                {judges.find(j => j.id === activeJudgeId)?.name || 'HolaSoyGerman'}
+            <div className="hidden sm:block">
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[180px]" title={judges.find(j => j.id === activeJudgeId)?.name || 'Tribunales'}>
+                {judges.find(j => j.id === activeJudgeId)?.name || 'Tribunales'}
               </h2>
-              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal de Tribunales</p>
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Portal de Tribunales</p>
             </div>
           </div>
-          <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
-            <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-          </button>
-        </div>
 
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-6 no-scrollbar space-y-2 relative z-10">
-          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest px-2 mb-4">Navegación</p>
-          {navTabs.map(tab => (
+          {/* Center Navigation Links (Tabs) */}
+          <nav className="hidden xl:flex items-center gap-1 mx-4 overflow-x-auto no-scrollbar">
+            {navTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all font-bold text-xs ${
+                  activeTab === tab.id
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                    : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[18px] ${activeTab === tab.id ? 'text-red-500' : ''}`}>{tab.icon}</span>
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all text-left text-base font-bold ${
-                activeTab === tab.id
-                  ? 'bg-red-50 text-red-700 shadow-sm border border-red-100'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:bg-white/5'
-              }`}
+              onClick={() => {
+                setNewTribunalForm({ name: '', fecha: '', convocatoriaId: '' });
+                setShowAddTribunalModal(true);
+              }}
+              className="hidden lg:flex px-3 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-xl text-xs font-bold items-center gap-1.5 shadow-md shadow-red-900/20 transition-all border border-red-500/50"
             >
-              <span className={`material-symbols-outlined text-[24px] ${activeTab === tab.id ? 'text-red-600' : 'text-stone-400'}`}>{tab.icon}</span>
-              {tab.label}
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Crear Mesa
             </button>
-          ))}
+
+            <button onClick={toggleDarkMode} className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-500 hover:text-stone-800 dark:text-stone-300 dark:hover:text-white transition-all">
+              <span className="material-symbols-outlined text-[18px] lg:text-[20px]">dark_mode</span>
+            </button>
+
+            <div className="w-px h-8 bg-stone-200 dark:bg-white/10 mx-1"></div>
+
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-xl lg:ml-2">
+              <span className="material-symbols-outlined">logout</span>
+            </button>
+          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-auto px-8 pt-8 border-t border-stone-100 dark:border-white/10 relative z-10 bg-white dark:bg-[#151515]">
-          <button
-            onClick={() => {
-              setNewTribunalForm({ name: '', fecha: '', convocatoriaId: '' });
-              setShowAddTribunalModal(true);
-            }}
-            className="w-full flex items-center justify-center gap-3 px-5 py-4 mb-4 bg-red-700 hover:bg-red-800 text-white text-sm font-bold rounded-xl shadow-lg shadow-red-700/20 transition-all hover:-translate-y-0.5"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span> Crear Mesa
-          </button>
-          
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:border-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-sm font-bold cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            Cerrar Sesión
-          </button>
+        {/* Mobile Tabs Scrollable row */}
+        <div className="xl:hidden w-full overflow-x-auto no-scrollbar border-t border-stone-200 dark:border-white/10 bg-white/50 dark:bg-black/40 backdrop-blur-md">
+          <div className="flex items-center px-4 py-2 gap-2 w-max">
+            {navTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === tab.id ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'text-stone-500'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </nav>
+      </header>
 
       {/* ── Main Content Area ──────────────────────────────────────────────── */}
-      <main className="flex-1 xl:ml-72 flex flex-col min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a] relative w-full print:hidden">
-        
-        {/* Mobile Header */}
-        <div className="xl:hidden sticky top-0 z-40 bg-white/80 dark:bg-[#151515]/80 backdrop-blur-md border-b border-stone-200 dark:border-white/20 p-4 flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center shadow-sm">
-                <span className="text-white font-black tracking-tighter text-xs">FMK</span>
-             </div>
-             <div>
-               <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block">FMK Portal</span>
-               <span className="text-[9px] font-bold text-red-600 uppercase tracking-widest block">Tribunales</span>
-             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-            </button>
-            <button onClick={onLogout} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Mobile Nav Scroll */}
-        <div className="xl:hidden sticky top-[65px] z-30 bg-white dark:bg-[#151515] border-b border-stone-100 dark:border-white/10 px-2 overflow-x-auto no-scrollbar py-2 flex gap-1 shadow-sm">
-          {navTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center min-w-[75px] px-2 py-2 rounded-xl text-[10px] font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-red-50 text-red-700 border border-red-100'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[20px] mb-1 ${activeTab === tab.id ? 'text-red-600' : 'text-stone-400'}`}>
-                {tab.icon}
-              </span>
-              <span className="truncate w-full text-center">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-10 flex flex-col relative z-10 print:p-0">
 
         {/* ── Main Content Container ────────────────────────────────────────── */}
-        <div className="flex-grow w-full max-w-[1600px] mx-auto flex flex-col p-6 lg:p-10">
+        <div className="flex-grow w-full mx-auto flex flex-col">
 
         {/* ════════════════════════════════════════════════
             TAB: DASHBOARD

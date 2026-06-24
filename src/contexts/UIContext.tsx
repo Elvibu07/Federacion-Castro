@@ -88,12 +88,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {/* Toasts Container */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
         {toasts.map(t => (
-          <div key={t.id} className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl text-sm font-bold min-w-[250px] max-w-sm animate-in slide-in-from-right-8 fade-in ${
-            t.type === 'success' ? 'bg-green-600 text-white' :
-            t.type === 'error' ? 'bg-red-600 text-white' :
-            'bg-stone-800 text-white'
+          <div key={t.id} className={`pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/10 text-sm font-bold min-w-[280px] max-w-sm animate-in slide-in-from-right-8 fade-in ${
+            t.type === 'success' ? 'bg-green-500/20 text-green-100 border-green-500/30' :
+            t.type === 'error' ? 'bg-red-600/20 text-red-100 border-red-500/30' :
+            'bg-white/10 text-white'
           }`}>
-            <span className="material-symbols-outlined text-lg">
+            <span className={`material-symbols-outlined text-xl ${
+              t.type === 'success' ? 'text-green-400' : t.type === 'error' ? 'text-red-400' : 'text-blue-400'
+            }`}>
               {t.type === 'success' ? 'check_circle' : t.type === 'error' ? 'error' : 'info'}
             </span>
             <p className="flex-1">{t.message}</p>
@@ -103,14 +105,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
       {/* Prompt Modal */}
       {promptData && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm animate-in zoom-in-95 fade-in">
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm animate-in zoom-in-95 fade-in overflow-hidden">
             <div className="p-6">
-              <h3 className="font-black text-lg text-on-surface mb-4">{promptData.options.title}</h3>
+              <h3 className="font-black text-xl text-white mb-4">{promptData.options.title}</h3>
               <input
                 type="text"
                 autoFocus
-                className="w-full px-4 py-3 bg-stone-50 border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-container text-black"
+                className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/50 text-white placeholder-white/30"
                 placeholder={promptData.options.placeholder}
                 value={promptInputValue}
                 onChange={e => setPromptInputValue(e.target.value)}
@@ -120,11 +122,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
                 }}
               />
             </div>
-            <div className="bg-stone-50 px-6 py-4 rounded-b-xl flex justify-end gap-3 border-t border-outline-variant">
-              <button onClick={handlePromptCancel} className="px-4 py-2 font-bold text-secondary-custom hover:bg-stone-200 rounded-lg transition-colors">
+            <div className="bg-black/20 px-6 py-4 flex justify-end gap-3 border-t border-white/5">
+              <button onClick={handlePromptCancel} className="px-5 py-2.5 font-bold text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                 Cancelar
               </button>
-              <button onClick={handlePromptSubmit} className="px-4 py-2 bg-primary-container text-on-primary-container font-bold rounded-lg hover:brightness-110 transition-all">
+              <button onClick={handlePromptSubmit} className="px-5 py-2.5 bg-red-600/80 text-white font-bold rounded-xl shadow-lg shadow-red-900/20 border border-red-500/50 hover:bg-red-500 transition-all">
                 {promptData.options.confirmText || 'Aceptar'}
               </button>
             </div>
@@ -134,16 +136,17 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
       {/* Confirm / Alert Modal */}
       {confirmData && (
-        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-md animate-in zoom-in-95 p-6">
-            <h3 className="font-black text-xl text-stone-800 dark:text-stone-100 mb-3">{confirmData.title}</h3>
-            <p className="text-sm text-stone-600 dark:text-stone-300 mb-8 leading-relaxed">{confirmData.message}</p>
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/50 w-full max-w-md animate-in zoom-in-95 p-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent opacity-50"></div>
+            <h3 className="font-black text-2xl text-white mb-3 tracking-wide">{confirmData.title}</h3>
+            <p className="text-[15px] text-white/70 mb-8 leading-relaxed font-light">{confirmData.message}</p>
             
             <div className="flex justify-end gap-3">
               {!confirmData.isAlert && (
                 <button 
                   onClick={() => setConfirmData(null)} 
-                  className="px-4 py-2 font-bold text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                  className="px-5 py-2.5 font-bold text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                 >
                   {confirmData.cancelText || 'Cancelar'}
                 </button>
@@ -151,17 +154,17 @@ export function UIProvider({ children }: { children: ReactNode }) {
               <button 
                 onClick={() => {
                   const currentData = confirmData;
-                  setConfirmData(null); // Clear first
+                  setConfirmData(null); 
                   if (currentData.isAlert) {
                     if (currentData.onAccept) currentData.onAccept();
                   } else {
-                    currentData.onConfirm(); // Then call callback, which might set a new confirmData
+                    currentData.onConfirm(); 
                   }
                 }} 
-                className={`px-5 py-2 font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
+                className={`px-6 py-2.5 font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 border ${
                   confirmData.isDanger 
-                    ? 'bg-red-600 text-white hover:bg-red-700' 
-                    : 'bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-900 dark:hover:bg-white'
+                    ? 'bg-red-600/80 text-white border-red-500/50 hover:bg-red-500 shadow-red-900/20' 
+                    : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
                 }`}
               >
                 {confirmData.isAlert ? 'Aceptar' : (confirmData.confirmText || 'Confirmar')}

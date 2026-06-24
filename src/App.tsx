@@ -10,7 +10,6 @@ import DeportistaPortal from './components/DeportistaPortal';
 import AdminPortal from './components/AdminPortal';
 import TribunalsPortal from './components/TribunalsPortal';
 import ProfesorPortal from './components/ProfesorPortal';
-import AcademyLanding from './components/AcademyLanding';
 import JudgePortal from './components/JudgePortal';
 import ArbitroPortal from './components/ArbitroPortal';
 import MedicoPortal from './components/MedicoPortal';
@@ -20,7 +19,7 @@ type AppRole = 'landing' | 'login' | 'deportista' | 'aspirante' | 'admin' | 'tri
 
 export default function App() {
   const [role, setRole] = useState<AppRole>(() => {
-    return (localStorage.getItem('fmk_role') as AppRole) || 'landing';
+    return (localStorage.getItem('fmk_role') as AppRole) || 'login';
   });
 
   const [activeUserId, setActiveUserId] = useState<string | null>(() => {
@@ -48,9 +47,7 @@ export default function App() {
   }, [activeClubName]);
 
   const [showDemoBar, setShowDemoBar] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
+  const [isDarkMode] = useState<boolean>(true); // Forced dark mode for premium aesthetic
 
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
@@ -352,7 +349,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="min-h-screen flex flex-col relative text-white bg-transparent">
+      {/* GLOBAL PREMIUM BACKGROUND (visible across all portals) */}
+      <div className="fixed inset-0 z-[-1] pointer-events-none bg-[#030303]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/20 via-[#030303] to-[#030303]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-rose-900/10 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
 
       {showPasswordSetup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
@@ -403,7 +406,6 @@ export default function App() {
           </div>
           <div className="flex gap-1 flex-wrap">
             {[
-              { label: '🏠 WEB',         r: 'landing' as AppRole },
               { label: '🔑 LOGIN',       r: 'login' as AppRole },
               { label: '⚽ DEPORTISTA',  r: 'deportista' as AppRole, email: 'ana.silva@ejemplo.com' },
               { label: '🥋 ASPIRANTE',   r: 'aspirante'  as AppRole, email: 'alejandro.ruiz@ejemplo.com' },
@@ -415,7 +417,6 @@ export default function App() {
                 key={r}
                 onClick={() => {
                   if (r === 'login') { setRole('login'); return; }
-                  if (r === 'landing') { setRole('landing'); return; }
                   if (email) {
                     const found = aspirantes.find(a => a.email.toLowerCase() === email);
                     if (found) setActiveUserId(found.id);
@@ -471,16 +472,10 @@ export default function App() {
 
       {/* ── Módulos ── */}
       <div className="flex-1 flex flex-col">
-        {role === 'landing' && (
-          <AcademyLanding
-            onGoToPortal={() => setRole('login')}
-          />
-        )}
 
         {role === 'login' && (
           <LoginPortal
             onLogin={handleLogin}
-            onBack={() => setRole('landing')}
           />
         )}
 

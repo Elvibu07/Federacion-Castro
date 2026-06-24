@@ -386,140 +386,110 @@ export default function AspirantPortal({
   ];
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex">
-      {/* ── Premium Sidebar ─────────────────────────────────────────────────── */}
-      <nav className="hidden lg:flex flex-col h-screen w-80 fixed left-0 top-0 border-r border-stone-200/50 dark:border-white/10 shadow-2xl shadow-stone-200/20 bg-white dark:bg-[#151515] py-8 z-50 overflow-hidden">
-        
-        {/* Abstract Background Decoration */}
-        <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-red-50 to-red-100/50 rounded-full blur-3xl -translate-y-24 translate-x-12 mix-blend-multiply pointer-events-none" />
-
-        {/* Brand / Logo Area */}
-        <div className="px-8 mb-10 relative z-10 flex items-center justify-between">
+    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-stone-800 dark:text-stone-100 font-sans min-h-screen flex flex-col">
+      {/* ── Premium Top Navigation Bar ─────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-black/60 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/10 shadow-sm w-full">
+        <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+          
+          {/* Logo & Brand */}
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/30">
-              <span className="text-white font-black tracking-tighter text-base">FMK</span>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-lg shadow-red-900/30">
+              <span className="text-white font-black tracking-tighter text-lg">FMK</span>
             </div>
-            <div>
-              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[140px]" title={aspirante.name}>
+            <div className="hidden sm:block">
+              <h2 className="font-black text-stone-800 dark:text-stone-100 text-lg tracking-wide leading-tight truncate max-w-[180px]" title={aspirante.name}>
                 {aspirante.name}
               </h2>
-              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Portal del Aspirante</p>
+              <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Portal del Aspirante</p>
             </div>
+            <span className={`hidden md:inline-block ml-2 text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm ${
+              aspirante.status === 'Validada' || aspirante.status === 'Admitida'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : aspirante.status === 'Subsanación'
+                ? 'bg-red-50 text-red-700 border-red-200'
+                : 'bg-stone-50 dark:bg-white/5 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-white/20'
+            }`}>{aspirante.status}</span>
           </div>
-          <button onClick={toggleDarkMode} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/10 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:text-stone-800 dark:hover:text-white transition-colors" title="Cambiar Tema">
-            <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-          </button>
-        </div>
 
-        {/* User Profile Summary */}
-        <div className="px-8 mb-10 relative z-10 flex flex-col items-center">
-          <label className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-white shadow-xl shadow-stone-200 dark:shadow-none flex items-center justify-center relative cursor-pointer group bg-stone-50 dark:bg-white/5">
-            {aspirante.avatarUrl ? (
-              <img src={aspirante.avatarUrl} alt={aspirante.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="material-symbols-outlined text-5xl text-stone-300">person</span>
+          {/* Center Navigation Links (Tabs) */}
+          <nav className="hidden xl:flex items-center gap-1 mx-4 overflow-x-auto no-scrollbar">
+            {navItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all font-bold text-xs ${
+                  activeTab === item.id
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                    : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-white/5 border border-transparent'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[18px] ${activeTab === item.id ? 'text-red-500' : ''}`}>{item.icon}</span>
+                <span className="whitespace-nowrap">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
+            {aspirante.paymentStatus === 'Unpaid' && aspirante.progressStep >= 3 && (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="hidden lg:flex px-3 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-xl text-xs font-bold items-center gap-1.5 shadow-md shadow-red-900/20 transition-all border border-red-500/50"
+              >
+                <span className="material-symbols-outlined text-[16px]">payment</span>
+                Pagar Tasas
+              </button>
             )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all">
-              <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+
+            <button onClick={toggleDarkMode} className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-stone-100 dark:bg-white/5 flex items-center justify-center text-stone-500 hover:text-stone-800 dark:text-stone-300 dark:hover:text-white transition-all">
+              <span className="material-symbols-outlined text-[18px] lg:text-[20px]">dark_mode</span>
+            </button>
+
+            <div className="w-px h-8 bg-stone-200 dark:bg-white/10 mx-1"></div>
+
+            <div className="flex items-center gap-2 cursor-pointer group">
+              <label className="relative cursor-pointer">
+                {aspirante.avatarUrl ? (
+                  <img src={aspirante.avatarUrl} alt="Avatar" className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl object-cover border border-stone-200 shadow-sm" />
+                ) : (
+                  <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-stone-200 dark:bg-white/10 flex items-center justify-center text-stone-600 dark:text-stone-300 font-bold text-sm border border-stone-300 dark:border-white/20">
+                    <span className="material-symbols-outlined">person</span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-          </label>
-          <p className="font-black text-lg text-stone-800 dark:text-stone-100 text-center leading-tight">{aspirante.name}</p>
-          <span className={`mt-3 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border shadow-sm ${
-            aspirante.status === 'Validada' || aspirante.status === 'Admitida'
-              ? 'bg-green-50 text-green-700 border-green-200'
-              : aspirante.status === 'Subsanación'
-              ? 'bg-red-50 text-red-700 border-red-200'
-              : 'bg-stone-50 dark:bg-white/5 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-white/20'
-          }`}>{aspirante.status}</span>
+            
+            <button onClick={onLogout} className="text-red-500 hover:text-red-700 w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center bg-red-50 dark:bg-red-500/10 rounded-xl lg:ml-2">
+              <span className="material-symbols-outlined">logout</span>
+            </button>
+          </div>
         </div>
 
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-6 no-scrollbar space-y-2 relative z-10">
-          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest px-2 mb-4">Menú Principal</p>
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all text-left text-base font-medium ${
-                activeTab === item.id
-                  ? 'bg-red-50 text-red-700 shadow-sm border border-red-100'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100 hover:bg-stone-50 dark:bg-white/5'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[24px] ${activeTab === item.id ? 'filled text-red-600' : 'text-stone-400'}`}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
+        {/* Mobile Tabs Scrollable row */}
+        <div className="xl:hidden w-full overflow-x-auto no-scrollbar border-t border-stone-200 dark:border-white/10 bg-white/50 dark:bg-black/40 backdrop-blur-md">
+          <div className="flex items-center px-4 py-2 gap-2 w-max">
+            {navItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === item.id ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'text-stone-500'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
-
-        {/* Footer Actions */}
-        <div className="mt-auto px-8 pt-8 border-t border-stone-100 dark:border-white/10 relative z-10 bg-white dark:bg-[#151515]">
-          {aspirante.paymentStatus === 'Unpaid' && aspirante.progressStep >= 3 && (
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="w-full mb-4 bg-red-700 hover:bg-red-800 text-white transition-all py-3.5 px-4 rounded-xl text-sm font-bold shadow-lg shadow-red-700/20 flex items-center justify-center gap-3 hover:-translate-y-0.5"
-            >
-              <span className="material-symbols-outlined text-[20px]">payment</span>
-              Pagar Tasas ({cuota.monto.toFixed(2)} €)
-            </button>
-          )}
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-stone-200 dark:border-white/20 text-stone-500 dark:text-stone-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all text-sm font-bold cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-            Cerrar Sesión
-          </button>
-        </div>
-      </nav>
+      </header>
 
       {/* ── Main Content Area ──────────────────────────────────────────────── */}
-      <main className="flex-1 lg:ml-80 flex flex-col min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a]">
-        
-        {/* Mobile Header */}
-        <div className="lg:hidden sticky top-0 z-40 bg-white/80 dark:bg-[#151515]/80 backdrop-blur-md border-b border-stone-200 dark:border-white/20 p-4 flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-lg bg-red-700 flex items-center justify-center">
-                <span className="text-white font-black tracking-tighter text-xs">FMK</span>
-             </div>
-             <div>
-               <span className="font-bold text-stone-800 dark:text-stone-100 text-sm leading-tight block truncate max-w-[120px]" title={aspirante.name}>{aspirante.name}</span>
-               <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest block">Portal del Aspirante</span>
-             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggleDarkMode} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-            </button>
-            <button onClick={onLogout} className="text-stone-500 dark:text-stone-400 flex items-center justify-center w-8 h-8 bg-stone-100 dark:bg-white/10 rounded-full">
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Mobile Nav Scroll */}
-        <div className="lg:hidden sticky top-[65px] z-30 bg-white dark:bg-[#151515] border-b border-stone-100 dark:border-white/10 px-2 overflow-x-auto no-scrollbar py-2 flex gap-1 shadow-sm">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center min-w-[75px] px-2 py-2 rounded-xl text-[10px] font-bold transition-all ${
-                activeTab === item.id
-                  ? 'bg-red-50 text-red-700 border border-red-100'
-                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:text-stone-100'
-              }`}
-            >
-              <span className={`material-symbols-outlined text-[20px] mb-1 ${activeTab === item.id ? 'filled text-red-600' : 'text-stone-400'}`}>
-                {item.icon}
-              </span>
-              <span className="truncate w-full text-center">{item.label}</span>
-            </button>
-          ))}
-        </div>
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col relative z-10">
 
         {/* Content Wrapper */}
-        <div className="flex-1 p-6 lg:p-10 max-w-[1200px] w-full mx-auto">
+        <div className="flex-1 w-full mx-auto">
 
         {/* ── Alerta Subsanación ── */}
         {aspirante.status === 'Subsanación' && (

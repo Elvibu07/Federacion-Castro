@@ -37,7 +37,7 @@ export async function sendMagicLinkForFirstTime(email: string, name?: string, ro
   const actionCodeSettings = {
     // URL you want to redirect back to. The domain (www.example.com) for this
     // URL must be in the authorized domains list in the Firebase Console.
-    url: 'https://fmkelviaheredia.vercel.app?type=recovery',
+    url: 'https://fmkcastrokilnger.vercel.app?type=recovery',
     handleCodeInApp: true,
   };
 
@@ -113,8 +113,8 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
   if (emailLower.includes('arbitro')) return { role: 'arbitro' };
 
   if (emailLower === 'lionchan07@gmail.com') return { role: 'director' };
-  if (emailLower === 'elvialeonsh@gmail.com') return { role: 'admin' };
-  if (emailLower === 'elviaheredia53@gmail.com') return { role: 'juez' };
+  if (emailLower === 'castrokilnger@gmail.com') return { role: 'admin' };
+  if (emailLower === 'castrokilnger.juez@gmail.com') return { role: 'juez' };
   if (emailLower === 'paginasusar@gmail.com') return { role: 'medico' };
   if (emailLower === 'arbitro@gmail.com') return { role: 'arbitro' };
 

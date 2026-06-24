@@ -19,10 +19,34 @@ import MedicoPortal from './components/MedicoPortal';
 type AppRole = 'landing' | 'login' | 'deportista' | 'aspirante' | 'admin' | 'tribunal' | 'profesor' | 'juez' | 'arbitro' | 'medico';
 
 export default function App() {
-  const [role, setRole] = useState<AppRole>('landing');
+  const [role, setRole] = useState<AppRole>(() => {
+    return (localStorage.getItem('fmk_role') as AppRole) || 'landing';
+  });
 
-  const [activeUserId, setActiveUserId] = useState<string | null>(null);
-  const [activeClubName, setActiveClubName] = useState<string>('Club Karate Madrid');
+  const [activeUserId, setActiveUserId] = useState<string | null>(() => {
+    return localStorage.getItem('fmk_activeUserId');
+  });
+  
+  const [activeClubName, setActiveClubName] = useState<string>(() => {
+    return localStorage.getItem('fmk_activeClubName') || 'Club Karate Madrid';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fmk_role', role);
+  }, [role]);
+
+  useEffect(() => {
+    if (activeUserId) {
+      localStorage.setItem('fmk_activeUserId', activeUserId);
+    } else {
+      localStorage.removeItem('fmk_activeUserId');
+    }
+  }, [activeUserId]);
+
+  useEffect(() => {
+    localStorage.setItem('fmk_activeClubName', activeClubName);
+  }, [activeClubName]);
+
   const [showDemoBar, setShowDemoBar] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);

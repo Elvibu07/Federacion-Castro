@@ -94,17 +94,17 @@ export default function TribunalsPortal({
     if (onUpdateTribunalAtomic) {
       tribunals.forEach(t => {
         if (t.id === tribunalId) {
-          onUpdateTribunalAtomic(t.id, { judges: [...t.judges.filter(j => j.id !== judgeId), targetJudge] });
-        } else if (t.judges.some(j => j.id === judgeId)) {
-          onUpdateTribunalAtomic(t.id, { judges: t.judges.filter(j => j.id !== judgeId) });
+          onUpdateTribunalAtomic(t.id, { judges: [...t.judges?.filter(j => j.id !== judgeId), targetJudge] });
+        } else if (t.judges?.some(j => j.id === judgeId)) {
+          onUpdateTribunalAtomic(t.id, { judges: t.judges?.filter(j => j.id !== judgeId) });
         }
       });
     } else {
       const updated = tribunals.map(t => ({
         ...t,
         judges: t.id === tribunalId
-          ? [...t.judges.filter(j => j.id !== judgeId), targetJudge]
-          : t.judges.filter(j => j.id !== judgeId),
+          ? [...t.judges?.filter(j => j.id !== judgeId), targetJudge]
+          : t.judges?.filter(j => j.id !== judgeId),
       }));
       onUpdateTribunals(updated);
     }
@@ -114,11 +114,11 @@ export default function TribunalsPortal({
     if (onUpdateTribunalAtomic) {
       const t = tribunals.find(tr => tr.id === tribunalId);
       if (t) {
-        onUpdateTribunalAtomic(tribunalId, { judges: t.judges.filter(j => j.id !== judgeId) });
+        onUpdateTribunalAtomic(tribunalId, { judges: t.judges?.filter(j => j.id !== judgeId) });
       }
     } else {
       onUpdateTribunals(tribunals.map(t =>
-        t.id === tribunalId ? { ...t, judges: t.judges.filter(j => j.id !== judgeId) } : t
+        t.id === tribunalId ? { ...t, judges: t.judges?.filter(j => j.id !== judgeId) } : t
       ));
     }
   };
@@ -238,7 +238,7 @@ export default function TribunalsPortal({
     const totalJueces = ev.votos.length;
     const aptosCount  = ev.votos.filter(v => v.resultado === 'Apto').length;
     const trib = tribunals.find(t => t.id === asp.assignedTribunalId);
-    const requiredVotes = trib?.judges.length || 1;
+    const requiredVotes = trib?.judges?.length || 1;
 
     let resultadoFinal: 'Apto' | 'No Apto' = 'No Apto';
     if (totalJueces >= requiredVotes) {
@@ -489,7 +489,7 @@ export default function TribunalsPortal({
                         <h4 className="font-black text-2xl text-stone-800 dark:text-stone-100">{trib.name}</h4>
                         {trib.fecha && <p className="text-xs text-stone-500 font-medium mt-1"><span className="material-symbols-outlined text-[14px] align-middle mr-1">calendar_today</span>{new Date(trib.fecha).toLocaleDateString()}</p>}
                         {trib.convocatoriaId && <p className="text-xs text-stone-500 font-medium"><span className="material-symbols-outlined text-[14px] align-middle mr-1">event</span>{convocatorias?.find(c => c.id === trib.convocatoriaId)?.titulo || 'Convocatoria'}</p>}
-                        <p className="text-sm text-stone-400 font-bold uppercase tracking-wider mt-1">{trib.judges.length} Jueces Asignados</p>
+                        <p className="text-sm text-stone-400 font-bold uppercase tracking-wider mt-1">{trib.judges?.length} Jueces Asignados</p>
                       </div>
                       <div className="bg-stone-50 dark:bg-white/5 text-stone-600 font-mono font-bold text-base px-4 py-1.5 rounded-lg border border-stone-200 dark:border-white/20 shadow-sm">
                         {evaluated} / {asps.length}
@@ -530,7 +530,7 @@ export default function TribunalsPortal({
                   {Array.from(new Map(judges.map(j => [j.name.trim().toLowerCase(), j])).values())
                     .filter(j => !j.rank.toLowerCase().includes('director'))
                     .map(judge => {
-                    const assignedTo = tribunals.find(t => t.judges.some(j => j.id === judge.id));
+                    const assignedTo = tribunals.find(t => t.judges?.some(j => j.id === judge.id));
                     return (
                       <div key={judge.id} className="group flex flex-col p-4 bg-white dark:bg-[#151515] hover:bg-stone-50 dark:hover:bg-white/5/80 rounded-2xl border border-stone-200 dark:border-white/20 hover:border-red-200 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-4 mb-3">
@@ -601,15 +601,15 @@ export default function TribunalsPortal({
 
                         {/* Jueces */}
                         <div className="bg-stone-50 dark:bg-white/5 border border-stone-200/60 rounded-2xl p-4 min-h-[140px] flex flex-col gap-3 mb-6 relative z-10">
-                          {trib.judges.length === 0 ? (
+                          {trib.judges?.length === 0 ? (
                             <div className="text-center p-6 flex flex-col items-center justify-center h-full">
                               <span className="material-symbols-outlined text-stone-300 text-4xl mb-2">person_add</span>
                               <p className="font-bold text-xs text-stone-400">Asigne jueces desde el padrón</p>
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              <span className="font-bold text-[10px] uppercase tracking-widest text-stone-400 block mb-3">Jueces Evaluadores ({trib.judges.length})</span>
-                              {trib.judges.map(j => (
+                              <span className="font-bold text-[10px] uppercase tracking-widest text-stone-400 block mb-3">Jueces Evaluadores ({trib.judges?.length})</span>
+                              {trib.judges?.map(j => (
                                 <div key={j.id} className="flex items-center justify-between bg-white dark:bg-[#151515] px-3 py-2.5 rounded-xl border border-stone-200 dark:border-white/20 shadow-sm hover:shadow-md transition-shadow">
                                   <div className="flex items-center gap-3">
                                     <img alt={j.name} className="w-8 h-8 rounded-full object-cover shadow-sm" src={j.avatarUrl} referrerPolicy="no-referrer" />
@@ -815,12 +815,12 @@ export default function TribunalsPortal({
                               )}
 
                               <div className="flex-1 flex flex-col justify-end">
-                                {totalVotos < (tribAsignado?.judges.length || 1) ? (
+                                {totalVotos < (tribAsignado?.judges?.length || 1) ? (
                                   <div className="p-6 text-center bg-amber-50 rounded-2xl border border-dashed border-amber-200">
                                     <span className="material-symbols-outlined text-3xl text-amber-400 mb-2">lock_clock</span>
                                     <p className="font-bold text-amber-800 text-sm">Faltan votos del tribunal</p>
                                     <p className="text-xs text-amber-700/70 mt-1">
-                                      Todos los jueces asignados ({tribAsignado?.judges.length || 1}) deben emitir su voto individual para habilitar el acta. (Recibidos: {totalVotos}/{tribAsignado?.judges.length || 1})
+                                      Todos los jueces asignados ({tribAsignado?.judges?.length || 1}) deben emitir su voto individual para habilitar el acta. (Recibidos: {totalVotos}/{tribAsignado?.judges?.length || 1})
                                     </p>
                                   </div>
                                 ) : ev.actaEmitida ? (
@@ -966,7 +966,7 @@ export default function TribunalsPortal({
                 .filter(j => !j.rank.toLowerCase().includes('director'))
                 .filter(j => j.name.toLowerCase().includes(judgeSearch.toLowerCase()) || j.rank.toLowerCase().includes(judgeSearch.toLowerCase()))
                 .map(j => {
-                const tribAsig = tribunals.find(t => t.judges.some(jj => jj.id === j.id));
+                const tribAsig = tribunals.find(t => t.judges?.some(jj => jj.id === j.id));
                 const evaluacionesHechas = Math.floor(Math.random() * 20) + 5; 
                 return (
                   <div key={j.id} className="bg-white dark:bg-[#151515] border border-stone-100 dark:border-white/10 rounded-3xl p-6 flex flex-col shadow-xl shadow-stone-200/30 hover:-translate-y-1 transition-transform group relative overflow-hidden">

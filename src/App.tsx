@@ -79,13 +79,32 @@ export default function App() {
             });
           });
 
-          const user = await Promise.race([
+          let user = await Promise.race([
             checkAuth,
             new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
           ]);
+
+          const { auth } = require('./lib/firebase');
+          const { isSignInWithEmailLink, signInWithEmailLink } = require('firebase/auth');
+
+          if (isSignInWithEmailLink(auth, window.location.href)) {
+            let email = window.localStorage.getItem('emailForSignIn');
+            if (!email) {
+              email = window.prompt('Por favor, confirma tu correo electrónico para acceder:');
+            }
+            if (email) {
+              try {
+                const result = await signInWithEmailLink(auth, email, window.location.href);
+                window.localStorage.removeItem('emailForSignIn');
+                user = result.user;
+              } catch (err) {
+                console.error('Error signing in with email link:', err);
+              }
+            }
+          }
           
           if (user && user.email) {
-            if (window.location.href.includes('type=recovery')) {
+            if (window.location.href.includes('type=recovery') || window.location.href.includes('apiKey=')) {
               setShowPasswordSetup(true);
               window.history.replaceState({}, document.title, window.location.pathname);
             }

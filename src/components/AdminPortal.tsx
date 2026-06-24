@@ -711,117 +711,143 @@ export default function AdminPortal({
             TAB: DASHBOARD
            ════════════════════════════════════════════════ */}
         {activeTab === 'dashboard' && (
-          <div className="flex-grow overflow-auto p-8 bg-[#fafafa] dark:bg-[#0a0a0a]">
-            <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 tracking-tight">Hola, {adminName}</h2>
-                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">Aquí tienes el resumen del ciclo de grados actual.</p>
+          <div className="flex-grow overflow-auto p-4 sm:p-8 relative min-h-[80vh]">
+            {/* Background Effects for the Dashboard Interior */}
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-900/10 rounded-full blur-[120px] pointer-events-none mix-blend-screen"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-600/5 rounded-full blur-[100px] pointer-events-none mix-blend-screen"></div>
+
+            <div className="max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
+              {/* Header Hero Section */}
+              <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/40 tracking-tighter drop-shadow-sm mb-2">
+                    Resumen Operativo
+                  </h2>
+                  <p className="text-base text-stone-400 font-medium tracking-wide">
+                    Ciclo de grados actual • Panel de control principal
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Sistema en línea
+                  </span>
+                </div>
               </div>
 
-              {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <div className="bg-white dark:bg-[#151515] p-6 lg:p-8 rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Total Solicitudes</p>
-                    <span className="material-symbols-outlined text-stone-400 text-2xl">description</span>
-                  </div>
-                  <p className="text-4xl font-black text-stone-800 dark:text-stone-100">{aspirantes.length}</p>
-                </div>
+              {/* Bento Grid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 
-                <div className="bg-white dark:bg-[#151515] p-6 lg:p-8 rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm flex flex-col justify-between group cursor-pointer hover:border-amber-300 transition-colors" onClick={() => setActiveTab('kanban')}>
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Por Revisar</p>
-                    <span className="material-symbols-outlined text-amber-500 text-2xl">pending_actions</span>
+                {/* Main Wide Card - Total Solicitudes */}
+                <div className="xl:col-span-2 bg-gradient-to-br from-white/5 to-transparent p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <span className="material-symbols-outlined text-8xl text-white">description</span>
                   </div>
-                  <p className="text-4xl font-black text-amber-600">{aspirantesConPendientes.length}</p>
+                  <div className="relative z-10 h-full flex flex-col justify-between">
+                    <p className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-8">Volumen Total de Solicitudes</p>
+                    <div>
+                      <p className="text-7xl font-black text-white tracking-tighter drop-shadow-md">
+                        {aspirantes.length}
+                      </p>
+                      <p className="text-sm text-emerald-400 font-bold mt-2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[16px]">trending_up</span>
+                        Crecimiento sostenido
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#151515] p-6 lg:p-8 rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Validados (Listos)</p>
-                    <span className="material-symbols-outlined text-blue-500 text-2xl">how_to_reg</span>
+                {/* Attention Required Card */}
+                <div 
+                  onClick={() => setActiveTab('kanban')}
+                  className="bg-white/[0.03] hover:bg-white/[0.08] p-8 rounded-3xl border border-white/10 hover:border-amber-500/30 shadow-xl backdrop-blur-xl transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <p className="text-xs font-bold text-amber-500/80 uppercase tracking-widest">Por Revisar</p>
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                      <span className="material-symbols-outlined text-amber-500 text-xl group-hover:scale-110 transition-transform">pending_actions</span>
+                    </div>
                   </div>
-                  <p className="text-4xl font-black text-blue-600">
+                  <div>
+                    <p className="text-5xl font-black text-white drop-shadow-md">{aspirantesConPendientes.length}</p>
+                    <div className="mt-4 w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (aspirantesConPendientes.length / Math.max(1, aspirantes.length)) * 100)}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Validated Card */}
+                <div className="bg-white/[0.03] p-8 rounded-3xl border border-white/10 shadow-xl backdrop-blur-xl flex flex-col justify-between">
+                  <div className="flex justify-between items-start mb-6">
+                    <p className="text-xs font-bold text-blue-500/80 uppercase tracking-widest">Validados</p>
+                    <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                      <span className="material-symbols-outlined text-blue-500 text-xl">how_to_reg</span>
+                    </div>
+                  </div>
+                  <p className="text-5xl font-black text-white drop-shadow-md">
                     {aspirantes.filter(a => a.status === 'Validada').length}
                   </p>
-                </div>
-
-                <div className="bg-white dark:bg-[#151515] p-6 lg:p-8 rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm flex flex-col justify-between">
-                  <div className="flex justify-between items-start mb-4">
-                    <p className="text-sm font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Actas Emitidas</p>
-                    <span className="material-symbols-outlined text-indigo-500 text-2xl">verified</span>
+                  <div className="mt-4 w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-blue-500 h-full rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${Math.min(100, (aspirantes.filter(a => a.status === 'Validada').length / Math.max(1, aspirantes.length)) * 100)}%` }}></div>
                   </div>
-                  <p className="text-4xl font-black text-indigo-600">
-                    {aspirantes.filter(a => a.status === 'Acta emitida').length}
-                  </p>
                 </div>
-              </div>
 
-              {/* Quick Actions & Recent */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white dark:bg-[#151515] rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm p-8">
-                  <h3 className="font-bold text-lg text-stone-800 dark:text-stone-100 mb-6">Atención Requerida (Revisión Documental)</h3>
+                {/* Subsanaciones and Actas in a split column or wide row */}
+                <div className="xl:col-span-2 bg-white/[0.03] p-8 rounded-3xl border border-white/10 shadow-xl backdrop-blur-xl flex flex-col justify-between relative overflow-hidden">
+                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-[50px] pointer-events-none"></div>
+                  <h3 className="font-bold text-sm text-stone-400 uppercase tracking-widest mb-6">Métricas de Evaluación Final</h3>
+                  <div className="grid grid-cols-2 gap-8 h-full relative z-10">
+                    <div className="flex flex-col justify-end">
+                      <p className="text-xs font-bold text-stone-500 mb-2 uppercase tracking-widest">Actas: Aptos</p>
+                      <div className="flex items-end gap-3">
+                        <p className="text-6xl font-black text-emerald-400">{aptos}</p>
+                        <span className="material-symbols-outlined text-emerald-500/50 text-3xl mb-1">verified</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col justify-end border-l border-white/5 pl-8">
+                      <p className="text-xs font-bold text-stone-500 mb-2 uppercase tracking-widest">Actas: No Aptos</p>
+                      <div className="flex items-end gap-3">
+                        <p className="text-6xl font-black text-red-500/80">{noAptos}</p>
+                        <span className="material-symbols-outlined text-red-500/30 text-3xl mb-1">cancel</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Activity Mini-Feed */}
+                <div className="xl:col-span-2 bg-gradient-to-tr from-white/[0.02] to-white/[0.05] p-8 rounded-3xl border border-white/10 shadow-xl backdrop-blur-xl flex flex-col">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-sm text-stone-300 uppercase tracking-widest">Fila de Trabajo Prioritaria</h3>
+                    <button onClick={() => setActiveTab('kanban')} className="text-xs font-bold text-red-400 hover:text-red-300 uppercase tracking-widest transition-colors flex items-center gap-1 group">
+                      Ver todo <span className="material-symbols-outlined text-[14px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </button>
+                  </div>
+                  
                   {aspirantesConPendientes.length === 0 ? (
-                    <div className="flex items-center justify-center py-12 text-stone-400">
-                      <p className="text-base">Todo al día. No hay documentos pendientes.</p>
+                    <div className="flex-1 flex flex-col items-center justify-center text-stone-500 gap-3 opacity-50">
+                      <span className="material-symbols-outlined text-5xl">done_all</span>
+                      <p className="text-sm font-medium tracking-widest uppercase">Bandeja limpia</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {aspirantesConPendientes.slice(0, 5).map(asp => (
-                        <div key={asp.id} className="flex items-center justify-between p-4 rounded-xl bg-stone-50 dark:bg-white/5 border border-stone-100 dark:border-white/10 hover:bg-stone-100 dark:bg-white/10 transition-colors">
+                    <div className="space-y-3 overflow-y-auto pr-2 no-scrollbar flex-1">
+                      {aspirantesConPendientes.slice(0, 4).map(asp => (
+                        <div key={asp.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-white/10 transition-all group cursor-pointer" onClick={() => { setSelectedAspirante(asp); setActiveTab('documentos'); }}>
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
-                              {asp.requestedBelt.split(' ')[0]}
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-stone-800 to-stone-900 border border-white/10 text-stone-300 flex items-center justify-center font-bold text-xs shadow-inner">
+                              {asp.requestedBelt.split(' ')[0].substring(0,2).toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-base font-bold text-stone-800 dark:text-stone-100">{asp.name}</p>
-                              <p className="text-xs text-stone-500 dark:text-stone-400">{asp.club} • #{asp.id}</p>
+                              <p className="text-sm font-bold text-stone-200 group-hover:text-white transition-colors">{asp.name}</p>
+                              <p className="text-[10px] text-stone-500 uppercase tracking-wider mt-0.5">{asp.club} • #{asp.id.substring(0,6)}</p>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => { setSelectedAspirante(asp); setActiveTab('documentos'); }}
-                            className="text-sm font-bold text-indigo-600 hover:text-indigo-800 px-4 py-2 bg-indigo-50 rounded-lg transition-colors"
-                          >
-                            Revisar
-                          </button>
+                          <span className="material-symbols-outlined text-stone-600 group-hover:text-white transition-colors">chevron_right</span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div className="bg-white dark:bg-[#151515] rounded-2xl border border-stone-200 dark:border-white/20 shadow-sm p-8">
-                  <h3 className="font-bold text-lg text-stone-800 dark:text-stone-100 mb-6">Resultados (Provisionales)</h3>
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-bold text-stone-600">Aptos</span>
-                        <span className="font-mono text-stone-500 dark:text-stone-400">{aptos}</span>
-                      </div>
-                      <div className="w-full bg-stone-100 dark:bg-white/10 rounded-full h-2">
-                        <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${Math.min(100, (aptos / (aptos + noAptos || 1)) * 100)}%` }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-bold text-stone-600">No Aptos</span>
-                        <span className="font-mono text-stone-500 dark:text-stone-400">{noAptos}</span>
-                      </div>
-                      <div className="w-full bg-stone-100 dark:bg-white/10 rounded-full h-2">
-                        <div className="bg-rose-500 h-2 rounded-full" style={{ width: `${Math.min(100, (noAptos / (aptos + noAptos || 1)) * 100)}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 pt-6 border-t border-stone-100 dark:border-white/10">
-                    <button 
-                      onClick={() => setActiveTab('convocatorias')}
-                      className="w-full py-2.5 bg-red-700 text-white text-sm font-bold rounded-lg shadow hover:bg-red-800 transition"
-                    >
-                      Gestionar Convocatorias
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1018,47 +1044,57 @@ export default function AdminPortal({
             </div>
 
             <div className="space-y-4">
-              {convocatorias.map(conv => {
-                const inscritos = aspirantes.filter(a => a.convocatoriaId === conv.id).length;
-                return (
-                  <div key={conv.id} className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl p-6 shadow-sm">
-                    <div className="flex justify-between items-start gap-4 flex-wrap">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] font-bold border px-2 py-0.5 rounded-full font-mono ${
-                            conv.estado === 'Abierta' ? 'bg-green-100 text-green-800 border-green-200' :
-                            conv.estado === 'Borrador' ? 'bg-stone-100 dark:bg-white/10 text-stone-600 border-stone-200 dark:border-white/20' :
-                            conv.estado === 'Cerrada' ? 'bg-red-100 text-red-700 border-red-200' :
-                            'bg-indigo-100 text-indigo-700 border-indigo-200'
-                          }`}>{conv.estado}</span>
-                        </div>
-                        <h3 className="font-bold text-base">{conv.titulo}</h3>
-                        <p className="text-xs text-secondary-custom mt-0.5">📅 {conv.fecha} — 📍 {conv.sede}</p>
-                        <p className="text-xs text-secondary-custom">Plazo: {conv.plazoOrdinario} · Cupo: {inscritos}/{conv.cupoMaximo}</p>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        {conv.estado === 'Borrador' && (
-                          <button onClick={() => updateConvEstado(conv.id, 'Abierta')}
-                            className="text-xs px-3 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-800">Publicar</button>
-                        )}
-                        {conv.estado === 'Abierta' && (
-                          <button onClick={() => updateConvEstado(conv.id, 'Cerrada')}
-                            className="text-xs px-3 py-1.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-800">Cerrar Inscripción</button>
-                        )}
-                        {conv.estado === 'Cerrada' && (
-                          <button onClick={() => updateConvEstado(conv.id, 'Finalizada')}
-                            className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-800">Finalizar</button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {(conv.gradesAdmitidos || (conv as any).grados || []).map((g: string) => (
-                        <span key={g} className="text-[10px] font-mono font-bold bg-surface-container-low dark:bg-white/5 border border-outline-variant px-1.5 py-0.5 rounded">{g}</span>
-                      ))}
-                    </div>
+              {convocatorias.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 border-dashed rounded-3xl mt-4">
+                  <div className="w-16 h-16 bg-white/5 text-stone-500 rounded-full flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-3xl">event_busy</span>
                   </div>
-                );
-              })}
+                  <p className="text-lg font-bold text-stone-300">No hay convocatorias</p>
+                  <p className="text-sm text-stone-500 mt-1 max-w-md text-center">Todavía no has creado ninguna convocatoria en la base de datos. Haz clic en "+ Nueva Convocatoria" para empezar.</p>
+                </div>
+              ) : (
+                convocatorias.map(conv => {
+                  const inscritos = aspirantes.filter(a => a.convocatoriaId === conv.id).length;
+                  return (
+                    <div key={conv.id} className="bg-white dark:bg-[#151515] border border-stone-200 dark:border-white/20 rounded-xl p-6 shadow-sm">
+                      <div className="flex justify-between items-start gap-4 flex-wrap">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-[10px] font-bold border px-2 py-0.5 rounded-full font-mono ${
+                              conv.estado === 'Abierta' ? 'bg-green-100 text-green-800 border-green-200' :
+                              conv.estado === 'Borrador' ? 'bg-stone-100 dark:bg-white/10 text-stone-600 border-stone-200 dark:border-white/20' :
+                              conv.estado === 'Cerrada' ? 'bg-red-100 text-red-700 border-red-200' :
+                              'bg-indigo-100 text-indigo-700 border-indigo-200'
+                            }`}>{conv.estado}</span>
+                          </div>
+                          <h3 className="font-bold text-base">{conv.titulo}</h3>
+                          <p className="text-xs text-secondary-custom mt-0.5">📅 {conv.fecha} — 📍 {conv.sede}</p>
+                          <p className="text-xs text-secondary-custom">Plazo: {conv.plazoOrdinario} · Cupo: {inscritos}/{conv.cupoMaximo}</p>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {conv.estado === 'Borrador' && (
+                            <button onClick={() => updateConvEstado(conv.id, 'Abierta')}
+                              className="text-xs px-3 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-800">Publicar</button>
+                          )}
+                          {conv.estado === 'Abierta' && (
+                            <button onClick={() => updateConvEstado(conv.id, 'Cerrada')}
+                              className="text-xs px-3 py-1.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-800">Cerrar Inscripción</button>
+                          )}
+                          {conv.estado === 'Cerrada' && (
+                            <button onClick={() => updateConvEstado(conv.id, 'Finalizada')}
+                              className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-800">Finalizar</button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {(conv.gradesAdmitidos || (conv as any).grados || []).map((g: string) => (
+                          <span key={g} className="text-[10px] font-mono font-bold bg-surface-container-low dark:bg-white/5 border border-outline-variant px-1.5 py-0.5 rounded">{g}</span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}

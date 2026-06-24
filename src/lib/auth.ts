@@ -75,6 +75,11 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
   const emailLower = email.toLowerCase().trim();
 
   try {
+    // 0. Hardcode master admin
+    if (emailLower === 'michaelcastroklinger@gmail.com' || emailLower === 'castrokilnger@gmail.com') {
+      return { role: 'admin' };
+    }
+
     // 1. Intentar consultar la coleccion user_roles en Firebase (Staff)
     const qRole = query(collection(db, "user_roles"), where("email", "==", emailLower));
     const roleSnapshot = await getDocs(qRole);

@@ -184,7 +184,7 @@ export interface Evaluacion {
     completado: boolean;
     resultado?: 'Apto' | 'No Apto';
     detalles?: string; // observaciones libres
-    kumiteDetalles?: { modalidad: string; encuentros: number; proteccionesWKF: boolean; resultadoCombate?: string; };
+    kumiteDetalles?: { modalidad: string; encuentros: number; proteccionesWKF: boolean; resultadoCombate?: string; puntosAka?: number; puntosAo?: number; };
     campeonatosDetalles?: { actaDeportivaAcreditada: boolean; combatesGanados: number; puntosAcumulados: number; };
     tecnicaDetalles?: { trabajosRealizados: string[]; };
   };

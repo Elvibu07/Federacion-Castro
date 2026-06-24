@@ -669,8 +669,8 @@ export default function DeportistaPortal({
             ) : (
               convAbiertas.map(conv => {
                 const diasRestantes = Math.ceil((new Date(conv.plazoOrdinario).getTime() - Date.now()) / 86400000);
-                const gradoAplica = conv.gradesAdmitidos.some(g =>
-                  deportista.requestedBelt?.toLowerCase().includes(g.toLowerCase())
+                const gradoAplica = (conv.gradesAdmitidos || []).some(g =>
+                  (deportista.requestedBelt || '').toLowerCase().includes((g || '').toLowerCase())
                 );
                 return (
                   <div key={conv.id} className={`bg-white dark:bg-[#151515] border border-stone-100 dark:border-white/10 rounded-3xl shadow-xl shadow-stone-200/40 dark:shadow-none p-6 lg:p-8 transition-all ${gradoAplica ? 'ring-2 ring-red-700/20' : ''}`}>
@@ -719,7 +719,7 @@ export default function DeportistaPortal({
                       </div>
                       <div className="bg-surface-container-low dark:bg-white/5 p-2.5 rounded">
                         <span className="font-mono text-[9px] text-stone-500 dark:text-stone-400 uppercase block">Grados</span>
-                        <span className="font-bold">{conv.gradesAdmitidos.join(' · ')}</span>
+                        <span className="font-bold">{(conv.gradesAdmitidos || []).join(' · ')}</span>
                       </div>
                     </div>
 

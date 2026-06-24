@@ -18,6 +18,7 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
   
   // States
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -56,22 +57,31 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
 
     setIsLoading(true);
     try {
-      const session = await signInWithPassword(email.trim().toLowerCase(), password);
+      let session: any = null;
+      if (password === 'fmk2024' || password === 'demo123') {
+        // Bypass mágico para la presentación
+        session = { displayName: fullName.trim() || email.split('@')[0] };
+      } else {
+        session = await signInWithPassword(email.trim().toLowerCase(), password);
+      }
+      
       if (session) {
-        const userMetadata = session.user?.user_metadata || {};
-        const metaRole = userMetadata.role;
-        const metaName = userMetadata.full_name;
-
         let { role, profileId } = await getUserRoleAndProfile(email.trim().toLowerCase());
-        if (!role && metaRole) {
-          role = metaRole;
-        }
+        const metaName = fullName.trim() || session.displayName || '';
         onLogin(role || 'deportista', profileId || email.trim().toLowerCase(), metaName);
       }
     } catch (err: any) {
-      setError('Credenciales incorrectas o usuario no encontrado.');
+      console.error(err);
+      setError('Credenciales incorrectas o usuario no encontrado en Firebase.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResetDB = () => {
+    if (confirm('¿Estás seguro de querer borrar todos los datos locales para iniciar una demostración desde cero?')) {
+      localStorage.clear();
+      window.location.reload();
     }
   };
 
@@ -171,6 +181,21 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             
+            {/* Full Name (Optional Demo) */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface uppercase tracking-wider">Nombre Completo (Opcional)</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary-custom text-lg">person</span>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-custom focus:border-transparent transition-all"
+                  placeholder="Ej. Juan de Dios"
+                />
+              </div>
+            </div>
+
             {/* Email */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-on-surface uppercase tracking-wider">Correo Electrónico</label>
@@ -259,6 +284,16 @@ export default function LoginPortal({ onLogin, onBack }: LoginPortalProps) {
               </button>
               <button type="button" onClick={() => onLogin('arbitro', 'arbitro@gmail.com')} className="px-3 py-2 text-xs font-bold bg-stone-100 hover:bg-stone-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg transition-colors border border-stone-200 dark:border-white/10 text-stone-700 dark:text-stone-300">
                 Árbitro (Kumite)
+              </button>
+            </div>
+            
+            <div className="mt-8 pt-6 border-t border-stone-200 dark:border-white/10 flex justify-center">
+              <button 
+                onClick={handleResetDB} 
+                className="text-[10px] uppercase tracking-widest font-bold text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 px-4 py-2 rounded-full transition-all flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[14px]">delete_forever</span>
+                Resetear Base de Datos (Iniciar desde cero)
               </button>
             </div>
           </div>

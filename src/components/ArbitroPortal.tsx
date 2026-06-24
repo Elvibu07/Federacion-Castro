@@ -63,13 +63,15 @@ export default function ArbitroPortal({
     setSenshu(null);
   };
 
-  // Filtrar aspirantes que van por la vía de Kumite y están en proceso de evaluación
+  // Filtrar aspirantes que pertenecen al tribunal del árbitro
+  const myTribunal = useMemo(() => tribunals.find(t => t.judges?.some(j => j.id === activeArbitroId)), [tribunals, activeArbitroId]);
+
   const kumiteAspirantes = useMemo(() => {
     return aspirantes.filter(a => 
-      a.via === 'Kumite' && 
+      a.assignedTribunalId === myTribunal?.id && 
       (a.status === 'Validada' || a.status === 'Admitida' || a.status === 'En evaluación' || a.status === 'Apto provisional' || a.status === 'No Apto provisional' || a.status === 'Pendiente' || a.status === 'Subsanación')
     );
-  }, [aspirantes]);
+  }, [aspirantes, myTribunal]);
 
   const getOrBuildEval = (asp: Aspirante): Evaluacion => {
     if (asp.evaluacion) return asp.evaluacion;
@@ -118,7 +120,7 @@ export default function ArbitroPortal({
         updateEval(aspId, updatedEv);
         
         if (onUpdateAspiranteAtomic) {
-          onUpdateAspiranteAtomic(aspId, { status: 'Evaluación finalizada' });
+          onUpdateAspiranteAtomic(aspId, { status: 'En evaluación' });
         }
         
         showAlert('Resultados Enviados', `Los resultados del combate de ${asp.name} han sido registrados.`);

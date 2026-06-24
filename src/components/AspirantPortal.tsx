@@ -129,8 +129,8 @@ export default function AspirantPortal({
 
   // Gradoconfig del grado solicitado
   const gradoConfig: GradoConfig | undefined = GRADOS_CONFIG.find(g =>
-    aspirante.requestedBelt?.toLowerCase().includes(g.nombre.toLowerCase()) ||
-    aspirante.requestedBelt?.toLowerCase().includes(g.etiquetaCorta.toLowerCase())
+    (aspirante.requestedBelt || '').toLowerCase().includes(g.nombre.toLowerCase()) ||
+    (aspirante.requestedBelt || '').toLowerCase().includes(g.etiquetaCorta.toLowerCase())
   ) || GRADOS_CONFIG[1]; // fallback 1º Dan
 
   // Validaciones automáticas (RF-18, RF-19, RF-20)
@@ -1085,8 +1085,8 @@ export default function AspirantPortal({
               convAbierta.map(conv => {
                 const isSelected = aspirante.convocatoriaId === conv.id;
                 const diasRestantes = Math.ceil((new Date(conv.plazoOrdinario).getTime() - Date.now()) / 86400000);
-                const gradoAdmitido = conv.gradesAdmitidos.some(g =>
-                  aspirante.requestedBelt?.toLowerCase().includes(g.toLowerCase())
+                const gradoAdmitido = (conv.gradesAdmitidos || []).some(g =>
+                  (aspirante.requestedBelt || '').toLowerCase().includes((g || '').toLowerCase())
                 );
 
                 return (
@@ -1143,7 +1143,7 @@ export default function AspirantPortal({
                       </div>
                       <div className="bg-surface-container-low dark:bg-white/5 p-2.5 rounded">
                         <span className="font-mono text-[9px] text-stone-500 dark:text-stone-400 uppercase block">Grados Admitidos</span>
-                        <span className="font-bold">{conv.gradesAdmitidos.join(', ')}</span>
+                        <span className="font-bold">{(conv.gradesAdmitidos || []).join(', ')}</span>
                       </div>
                     </div>
 

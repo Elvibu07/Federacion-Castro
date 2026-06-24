@@ -21,7 +21,7 @@ export default function ActaImprimible({ aspirante, tribunal, convocatoria, juec
       generateActaPDF(aspirante, tribunal, convocatoria, jueces);
     } else {
       // Fallback
-      generateActaPDF(aspirante, tribunal || { id: '', name: 'Tribunal No Asignado', judges: [] }, convocatoria || { id: '', titulo: 'Convocatoria General', status: 'Abierta' } as any, jueces);
+      generateActaPDF(aspirante, tribunal || { id: '', name: 'Tribunal No Asignado', judges: [] } as any, convocatoria || { id: '', titulo: 'Convocatoria General', status: 'Abierta' } as any, jueces);
     }
   };
 

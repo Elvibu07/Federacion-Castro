@@ -57,7 +57,8 @@ function DocEstadoBadge({ estado }: { estado: EstadoDocumento }) {
     rechazado:            { label: 'Rechazado ✗',   cls: 'text-red-700 bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700/30 dark:text-red-400' },
     requiere_subsanacion: { label: 'Subsanación',   cls: 'text-orange-700 bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-700/30 dark:text-orange-400' },
   };
-  const { label, cls } = map[estado];
+  const badgeData = map[estado] || { label: String(estado || 'Desconocido'), cls: 'text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-white/10 border-stone-200 dark:border-white/20' };
+  const { label, cls } = badgeData;
   return <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${cls}`}>{label}</span>;
 }
 
@@ -79,6 +80,64 @@ export default function AdminPortal({
   onAddConvocatoriaAtomic,
 }: AdminPortalProps) {
   const { showToast, showConfirm, showAlert, showPrompt } = useUI();
+  
+  const handleInjectTestData = async () => {
+    if (!confirm('¿Deseas inyectar datos de prueba (1 convocatoria, 1 tribunal y 1 aspirante)?')) return;
+    try {
+      const { generateUUID } = await import('../lib/uuid');
+      const api = await import('../lib/api');
+      
+      const convId = generateUUID();
+      const newConv = await api.createConvocatoria({
+        id: convId,
+        titulo: 'Convocatoria Test Mágico',
+        fecha: new Date().toISOString(),
+        sede: 'Dojo Pruebas Central',
+        gradesAdmitidos: ['Cinturón Negro', '1º Dan', '2º Dan'],
+        vias: ['Vía Ordinaria', 'Vía Méritos Deportivos'],
+        estado: 'Abierta',
+        descripcion: 'Generada automáticamente para pruebas.'
+      });
+
+      const tribId = generateUUID();
+      const juezPrueba = judges.find(j => j.rank === 'Juez Nacional') || judges[0];
+      
+      const newTrib = await api.createTribunal({
+        id: tribId,
+        name: 'Mesa 1 - Especial Test',
+        fecha: new Date().toISOString(),
+        convocatoriaId: convId,
+        judges: juezPrueba ? [juezPrueba] : [],
+        arbitros: []
+      });
+
+      const aspId = generateUUID();
+      const newAsp = await api.createAspirante({
+        id: aspId,
+        name: 'Goku Son (Test)',
+        email: 'goku@capsulecorp.com',
+        club: 'Kame House Dojo',
+        currentBelt: 'Cinturón Marrón',
+        requestedBelt: 'Cinturón Negro',
+        via: 'Kumite',
+        status: 'En evaluación',
+        paymentStatus: 'Paid',
+        assignedTribunalId: tribId,
+        convocatoriaId: convId,
+        documentos: [
+          { etiqueta: 'DNI', nombre: 'DNI', tipo: 'dni', url: 'https://ejemplo.com/dni.jpg', estado: 'aprobado' },
+          { etiqueta: 'Permiso', nombre: 'Permiso', tipo: 'licencia', url: 'https://ejemplo.com/perm.pdf', estado: 'aprobado' }
+        ]
+      });
+
+      alert('¡Datos inyectados exitosamente! Recarga la página (F5) para verlos.');
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+      alert('Error inyectando datos de prueba.');
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [searchQuery, setSearchQuery]     = useState('');
   const [gradeFilter, setGradeFilter]     = useState<'All' | 'Kyu' | 'Dan'>('All');
@@ -1069,7 +1128,7 @@ export default function AdminPortal({
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-1">
-                      {conv.gradesAdmitidos.map(g => (
+                      {(conv.gradesAdmitidos || (conv as any).grados || []).map((g: string) => (
                         <span key={g} className="text-[10px] font-mono font-bold bg-surface-container-low dark:bg-white/5 border border-outline-variant px-1.5 py-0.5 rounded">{g}</span>
                       ))}
                     </div>
@@ -1469,14 +1528,14 @@ export default function AdminPortal({
                             {trib.isMain ? 'Mesa Principal' : 'Mesa Auxiliar'}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-stone-400">{trib.judges.length} Jueces</span>
+                        <span className="text-xs font-bold text-stone-400">{(trib.judges || []).length} Jueces</span>
                       </div>
                       <div className="p-4 bg-white dark:bg-[#151515]">
-                        {trib.judges.length === 0 ? (
+                        {(trib.judges || []).length === 0 ? (
                           <p className="text-xs text-stone-400 italic">No hay jueces asignados a esta mesa.</p>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            {trib.judges.map(j => (
+                            {(trib.judges || []).map(j => (
                               <span key={j.id} className="text-[10px] font-bold uppercase tracking-widest bg-stone-100 dark:bg-white/10 text-stone-600 dark:text-stone-300 px-2.5 py-1 rounded-md border border-stone-200 dark:border-white/20 flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> {j.name}
                               </span>
@@ -1963,6 +2022,7 @@ export default function AdminPortal({
           aspirante={selectedAspirante}
           tribunal={allTribunals.find(t => t.id === selectedAspirante.assignedTribunalId)}
           convocatoria={convocatorias.find(c => c.id === selectedAspirante.convocatoriaId)}
+          jueces={judges}
           onClose={() => setShowActaModal(false)}
           onPrint={() => window.print()}
         />

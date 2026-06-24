@@ -684,7 +684,7 @@ export default function TribunalsPortal({
                 {admitidos.map(asp => {
                   const ev = getOrBuildEval(asp);
                   const tribAsignado = tribunals.find(t => t.id === asp.assignedTribunalId);
-                  const juecesDisp = tribAsignado?.judges || judges;
+                  const juecesDisp = (tribAsignado?.judges || judges).filter(j => j.rank.toLowerCase().includes('juez') || j.rank.toLowerCase().includes('evaluador'));
                   const gradoConfig = GRADOS_CONFIG.find(g =>
                     asp.requestedBelt.toLowerCase().includes(g.nombre.toLowerCase())
                   );
@@ -815,12 +815,12 @@ export default function TribunalsPortal({
                               )}
 
                               <div className="flex-1 flex flex-col justify-end">
-                                {totalVotos < (tribAsignado?.judges?.length || 1) ? (
+                                {totalVotos < Math.max(1, juecesDisp.length) ? (
                                   <div className="p-6 text-center bg-amber-50 rounded-2xl border border-dashed border-amber-200">
                                     <span className="material-symbols-outlined text-3xl text-amber-400 mb-2">lock_clock</span>
                                     <p className="font-bold text-amber-800 text-sm">Faltan votos del tribunal</p>
                                     <p className="text-xs text-amber-700/70 mt-1">
-                                      Todos los jueces asignados ({tribAsignado?.judges?.length || 1}) deben emitir su voto individual para habilitar el acta. (Recibidos: {totalVotos}/{tribAsignado?.judges?.length || 1})
+                                      Todos los jueces evaluadores asignados ({juecesDisp.length}) deben emitir su voto individual para habilitar el acta. (Recibidos: {totalVotos}/{juecesDisp.length})
                                     </p>
                                   </div>
                                 ) : ev.actaEmitida ? (
@@ -1130,10 +1130,10 @@ export default function TribunalsPortal({
                 return (
                   <div
                     key={asp.id}
-                    onClick={() => !isOther && handleToggleAsp(asp.id, assigningAspTribunal.id)}
+                    onClick={() => handleToggleAsp(asp.id, assigningAspTribunal.id)}
                     className={`flex items-center justify-between p-3 rounded border text-xs cursor-pointer transition-all ${
                       isHere ? 'border-blue-500 bg-stone-50/50' :
-                      isOther ? 'opacity-40 cursor-not-allowed border-stone-200 dark:border-white/20 bg-stone-50 dark:bg-white/5' :
+                        isOther ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-900/10' :
                       'border-stone-200 dark:border-white/20 hover:bg-stone-50 dark:bg-white/5'
                     }`}
                   >

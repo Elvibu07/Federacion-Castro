@@ -23,9 +23,9 @@ export const generateActaPDF = (
   const doc = new jsPDF() as jsPDFWithAutoTable;
 
   // Colors
-  const primaryColor = [139, 0, 0]; // Dark Red (#8b0000)
-  const textColor = [40, 40, 40];
-  const lightGray = [240, 240, 240];
+  const primaryColor: [number, number, number] = [139, 0, 0]; // Dark Red (#8b0000)
+  const textColor: [number, number, number] = [40, 40, 40];
+  const lightGray: [number, number, number] = [240, 240, 240];
 
   // Header
   doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -209,7 +209,7 @@ export const generateDiplomaPDF = (aspirante: Aspirante) => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(14);
   doc.setTextColor(80, 80, 80);
-  const dateStr = formatDate(aspirante.evaluacion?.fechaEmision || new Date().toISOString());
+  const dateStr = formatDate(aspirante.evaluacion?.fechaEvaluacion || new Date().toISOString());
   doc.text(`Emitido el día ${dateStr}`, width / 2, 190, { align: 'center' });
 
   // Signature

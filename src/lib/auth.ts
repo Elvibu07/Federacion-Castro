@@ -88,14 +88,14 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
     }
 
     // 2. Si no es staff, buscar en la coleccion aspirantes
-    const qAsp = query(collection(db, "aspirantes"), where("email", "==", emailLower));
+    const qAsp = query(collection(db, "aspirantes_demo"), where("email", "==", emailLower));
     const aspSnapshot = await getDocs(qAsp);
 
     if (!aspSnapshot.empty) {
       const aspData = aspSnapshot.docs[0];
       console.log(`[auth] Estudiante encontrado en tabla aspirantes para ${emailLower}`);
       return {
-        role: 'aspirante',
+        role: 'deportista',
         profileId: aspData.id
       };
     }
@@ -106,13 +106,19 @@ export async function getUserRoleAndProfile(email: string): Promise<{ role: User
   // 3. SISTEMA DE RESPALDO GARANTIZADO (FALLBACK HARDCODEADO)
   console.warn(`[auth] Usando sistema de respaldo local para ${emailLower}...`);
   
+  if (emailLower.includes('director')) return { role: 'director' };
+  if (emailLower.includes('admin')) return { role: 'admin' };
+  if (emailLower.includes('juez')) return { role: 'juez' };
+  if (emailLower.includes('medico')) return { role: 'medico' };
+  if (emailLower.includes('arbitro')) return { role: 'arbitro' };
+
   if (emailLower === 'lionchan07@gmail.com') return { role: 'director' };
   if (emailLower === 'elvialeonsh@gmail.com') return { role: 'admin' };
   if (emailLower === 'elviaheredia53@gmail.com') return { role: 'juez' };
   if (emailLower === 'paginasusar@gmail.com') return { role: 'medico' };
   if (emailLower === 'arbitro@gmail.com') return { role: 'arbitro' };
 
-  // 4. Si no está en Firebase ni en el respaldo, asumir nuevo estudiante
-  console.warn(`[auth] No se encontró rol para ${emailLower}. Rol por defecto: aspirante`);
-  return { role: 'aspirante' };
+  // 4. Si no está en Firebase ni en el respaldo, asumir nuevo estudiante (Deportista por defecto)
+  console.warn(`[auth] No se encontró rol para ${emailLower}. Rol por defecto: deportista`);
+  return { role: 'deportista' };
 }

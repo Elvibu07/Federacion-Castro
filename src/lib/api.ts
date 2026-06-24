@@ -10,7 +10,7 @@ export async function createConvocatoria(convocatoria: Partial<Convocatoria>): P
   try {
     console.log("Intentando guardar en Firebase...", convocatoria);
     
-    const docRef = await addDoc(collection(db, "convocatorias"), {
+    const docRef = await addDoc(collection(db, "convocatorias_demo"), {
       titulo: convocatoria.titulo || 'Nueva Convocatoria',
       fecha: convocatoria.fecha || new Date().toISOString().split('T')[0],
       sede: convocatoria.sede || 'Sede Central',
@@ -19,9 +19,7 @@ export async function createConvocatoria(convocatoria: Partial<Convocatoria>): P
       estado: convocatoria.estado || 'Borrador',
       cupoMaximo: convocatoria.cupoMaximo || 40,
       inscritos: convocatoria.inscritos || 0,
-      observaciones: convocatoria.observaciones || 'Sin observaciones',
-      juecesAsignados: convocatoria.juecesAsignados || [], 
-      arbitrosAsignados: convocatoria.arbitrosAsignados || []
+      observaciones: convocatoria.observaciones || 'Sin observaciones'
     });
 
     console.log("✅ ¡Guardado con éxito! ID:", docRef.id);
@@ -34,7 +32,7 @@ export async function createConvocatoria(convocatoria: Partial<Convocatoria>): P
 
 export async function fetchConvocatorias(): Promise<Convocatoria[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "convocatorias"));
+    const querySnapshot = await getDocs(collection(db, "convocatorias_demo"));
     const convocatorias: Convocatoria[] = [];
     
     querySnapshot.forEach((docSnap) => {
@@ -50,7 +48,7 @@ export async function fetchConvocatorias(): Promise<Convocatoria[]> {
 
 export async function updateConvocatoria(id: string, data: Partial<Convocatoria>): Promise<boolean> {
   try {
-    const docRef = doc(db, "convocatorias", id);
+    const docRef = doc(db, "convocatorias_demo", id);
     await updateDoc(docRef, data);
     return true;
   } catch (e) {
@@ -65,7 +63,7 @@ export async function updateConvocatoria(id: string, data: Partial<Convocatoria>
 
 export async function fetchAspirantes(): Promise<Aspirante[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, "aspirantes"));
+    const querySnapshot = await getDocs(collection(db, "aspirantes_demo"));
     const aspirantes: Aspirante[] = [];
     
     querySnapshot.forEach((docSnap) => {
@@ -81,7 +79,7 @@ export async function fetchAspirantes(): Promise<Aspirante[]> {
 
 export async function createAspirante(aspirante: Partial<Aspirante>): Promise<Aspirante | null> {
   try {
-    const docRef = await addDoc(collection(db, "aspirantes"), aspirante);
+    const docRef = await addDoc(collection(db, "aspirantes_demo"), aspirante);
     return { ...aspirante, id: docRef.id } as Aspirante;
   } catch (e) {
     console.error("❌ Error guardando aspirante: ", e);
@@ -91,7 +89,7 @@ export async function createAspirante(aspirante: Partial<Aspirante>): Promise<As
 
 export async function updateAspirante(id: string, data: Partial<Aspirante>): Promise<boolean> {
   try {
-    const docRef = doc(db, "aspirantes", id);
+    const docRef = doc(db, "aspirantes_demo", id);
     await updateDoc(docRef, data);
     return true;
   } catch (e) {

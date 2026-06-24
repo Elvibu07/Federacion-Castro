@@ -54,7 +54,7 @@ export default function LoginPortal({ onLogin }: LoginPortalProps) {
     setIsLoading(true);
     try {
       let session: any = null;
-      if (password === 'fmk2024' || password === 'demo123') {
+      if (password === 'm1ch@el_115') {
         session = { displayName: fullName.trim() || email.split('@')[0] };
       } else {
         session = await signInWithPassword(email.trim().toLowerCase(), password);
@@ -224,7 +224,7 @@ export default function LoginPortal({ onLogin }: LoginPortalProps) {
           <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest text-center mb-3">Accesos Demo Rápidos</p>
           <div className="flex flex-wrap justify-center gap-2 opacity-50 hover:opacity-100 transition-opacity duration-300">
             {[
-              { label: 'Admin', role: 'admin', email: 'castrokilnger@gmail.com' },
+              { label: 'Admin', role: 'admin', email: 'michaelcastroklinger@gmail.com' },
               { label: 'Aspirante', role: 'aspirante', email: 'castrokilnger.aspirante@gmail.com' },
               { label: 'Juez', role: 'juez', email: 'castrokilnger.juez@gmail.com' },
               { label: 'Director', role: 'director', email: 'lionchan07@gmail.com' },
@@ -234,7 +234,11 @@ export default function LoginPortal({ onLogin }: LoginPortalProps) {
               <button 
                 key={btn.role}
                 type="button" 
-                onClick={() => onLogin(btn.role as UserRoleType, btn.email)} 
+                onClick={() => {
+                  setEmail(btn.email);
+                  setPassword('m1ch@el_115');
+                  onLogin(btn.role as UserRoleType, btn.email, btn.label);
+                }} 
                 className="px-3 py-1.5 text-[10px] font-medium bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10 text-white/60 hover:text-white"
               >
                 {btn.label}

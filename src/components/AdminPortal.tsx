@@ -410,8 +410,8 @@ export default function AdminPortal({
       asp.id.toLowerCase().includes(q) ||
       asp.club.toLowerCase().includes(q);
     if (!matchSearch) return false;
-    if (gradeFilter === 'Kyu') return asp.requestedBelt.toLowerCase().includes('kyu') || asp.requestedBelt.toLowerCase().includes('marrón') || asp.requestedBelt.toLowerCase().includes('negro') && !asp.requestedBelt.includes('Dan');
-    if (gradeFilter === 'Dan') return asp.requestedBelt.toLowerCase().includes('dan') || asp.requestedBelt.toLowerCase().includes('negro');
+    if (gradeFilter === 'Kyu') return (asp.requestedBelt || '').toLowerCase().includes('kyu') || (asp.requestedBelt || '').toLowerCase().includes('marrón') || (asp.requestedBelt || '').toLowerCase().includes('negro') && !(asp.requestedBelt || '').includes('Dan');
+    if (gradeFilter === 'Dan') return (asp.requestedBelt || '').toLowerCase().includes('dan') || (asp.requestedBelt || '').toLowerCase().includes('negro');
     return true;
   });
 
@@ -834,7 +834,7 @@ export default function AdminPortal({
                         <div key={asp.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-white/10 transition-all group cursor-pointer" onClick={() => { setSelectedAspirante(asp); setActiveTab('documentos'); }}>
                           <div className="flex items-center gap-4">
                             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-stone-800 to-stone-900 border border-white/10 text-stone-300 flex items-center justify-center font-bold text-xs shadow-inner">
-                              {asp.requestedBelt.split(' ')[0].substring(0,2).toUpperCase()}
+                              {(asp.requestedBelt || '??').split(' ')[0].substring(0,2).toUpperCase()}
                             </div>
                             <div>
                               <p className="text-sm font-bold text-stone-200 group-hover:text-white transition-colors">{asp.name}</p>
